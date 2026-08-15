@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Versões Geradas — {{ prova_base.titulo }} — EduProvas{% endblock %}
+{% block page_title %}Versões Embaralhadas: {{ prova_base.titulo }}{% endblock %}
+{% block page_subtitle %}Disciplina: {{ prova_base.disciplina.nome }} | Turma: {{ prova_base.turma }} | Total de Questões: {{ prova_base.questoes_associadas|length }}{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <a href="{{ url_for('gabaritos.matriz', prova_base_id=prova_base.id) }}" class="btn btn-secondary">
+        <i class="bi bi-grid-3x3-gap"></i> Matriz de Gabaritos
+    </a>
+    <a href="{{ url_for('provas.download_zip_lote', prova_base_id=prova_base.id) }}" class="btn btn-primary">
+        <i class="bi bi-file-earmark-zip"></i> Baixar Pacote ZIP (Todas as Provas + Gabaritos)
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px; background: #f8fafc;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="font-size: 15px; font-weight: 700; color: #0f172a;">Geração Concluída</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">
+                Foram geradas <strong>{{ versoes|length }} versões</strong> independentes com reordenação de questões e alternativas via Fisher-Yates com seed auditável.
+            </p>
+        </div>
+        <div>
+            <form action="{{ url_for('provas.gerar_mais_versoes', prova_base_id=prova_base.id) }}" method="POST" style="display: flex; gap: 8px; align-items: center;">
+                <input type="number" name="quantidade" min="1" max="20" value="1" class="form-control" style="width: 70px; text-align: center;">
+                <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-plus-lg"></i> Gerar Mais Versões</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela com as X Versões -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Versão</th>
+                    <th>Código Único</th>
+                    <th>Seed de Auditoria</th>
+                    <th>Data Geração</th>
+                    <th style="text-align: center;">Prova do Aluno</th>
+                    <th style="text-align: center;">Gabarito Oficial</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in versoes %}
+                <tr>
+                    <td>
+                        <strong style="font-size: 15px; color: #1e40af;">Versão {{ "%02d"|format(v.numero_versao) }}</strong>
+                    </td>
+                    <td><span class="badge badge-code" style="font-size: 13px; font-weight: 700;">{{ v.codigo_versao }}</span></td>
+                    <td><span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">{{ v.seed }}</span></td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">{{ v.criada_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="text-align: center;">
+                        <div class="btn-group" style="justify-content: center;">
+                            <a href="{{ url_for('provas.visualizar_prova', prova_gerada_id=v.id) }}" class="btn btn-sm btn-secondary" title="Visualizar Prova na Tela">
+                                <i class="bi bi-eye"></i> Ver Tela
+                            </a>
+                            <a href="{{ url_for('provas.download_pdf_prova', prova_gerada_id=v.id) }}" target="_blank" class="btn btn-sm btn-secondary" title="Baixar/Imprimir PDF Prova">
+                                <i class="bi bi-file-earmark-pdf"></i> PDF Prova
+                            </a>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <div class="btn-group" style="justify-content: center;">
+                            <a href="{{ url_for('gabaritos.visualizar', prova_gerada_id=v.id) }}" class="btn btn-sm btn-secondary" title="Ver Gabarito">
+                                <i class="bi bi-check-square"></i> Ver Gabarito
+                            </a>
+                            <a href="{{ url_for('gabaritos.download_pdf_gabarito', prova_gerada_id=v.id) }}" target="_blank" class="btn btn-sm btn-secondary" title="Baixar PDF Gabarito">
+                                <i class="bi bi-file-earmark-pdf"></i> PDF Gabarito
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

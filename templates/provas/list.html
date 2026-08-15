@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Provas & Modelos — EduProvas{% endblock %}
+{% block page_title %}Provas & Gerador de Versões{% endblock %}
+{% block page_subtitle %}Gerencie modelos de provas e gere versões embaralhadas com gabaritos vinculados{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <button type="button" class="btn btn-secondary" onclick="openModal('modal-disciplina')">
+        <i class="bi bi-plus-circle"></i> Cadastrar Disciplina
+    </button>
+    <a href="{{ url_for('provas.create') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Criar Nova Prova
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Tabela de Provas-Base -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Modelos de Prova-Base</h2>
+    </div>
+
+    {% if provas_base %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título da Prova</th>
+                    <th>Disciplina</th>
+                    <th>Turma</th>
+                    <th>Data Aplicação</th>
+                    <th>Nº Questões</th>
+                    <th>Versões Geradas</th>
+                    <th style="width: 220px; text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pb in provas_base %}
+                <tr>
+                    <td><span class="badge badge-code">#{{ pb.id }}</span></td>
+                    <td>
+                        <strong style="color: #0f172a;">{{ pb.titulo }}</strong>
+                        <div style="font-size: 11px; color: var(--text-muted);">Criada em {{ pb.criada_em.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </td>
+                    <td><strong>{{ pb.disciplina.nome }}</strong></td>
+                    <td><span class="badge badge-code">{{ pb.turma }}</span></td>
+                    <td style="font-size: 13px;">{{ pb.data_aplicacao.strftime('%d/%m/%Y') if pb.data_aplicacao else '-' }}</td>
+                    <td><span class="badge badge-multipla">{{ pb.questoes_associadas|length }} questões</span></td>
+                    <td>
+                        <a href="{{ url_for('provas.geradas_list', prova_base_id=pb.id) }}" class="badge badge-facil" style="text-decoration: none;">
+                            <i class="bi bi-arrow-repeat"></i> {{ pb.versoes_geradas|length }} versão(ões)
+                        </a>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="btn-group" style="justify-content: flex-end;">
+                            <a href="{{ url_for('provas.geradas_list', prova_base_id=pb.id) }}" class="btn btn-sm btn-primary" title="Ver Versões Geradas">
+                                Versões & Gabarito
+                            </a>
+                            <form action="{{ url_for('provas.delete', id=pb.id) }}" method="POST" onsubmit="return confirm('Excluir esta prova-base excluirá todas as versões geradas e gabaritos. Confirmar?');">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir Prova-Base"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px 20px;">
+        <p style="font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Nenhuma prova-base criada ainda</p>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Crie um modelo selecionando questões do banco e defina quantas versões embaralhadas deseja gerar.</p>
+        <a href="{{ url_for('provas.create') }}" class="btn btn-primary">Criar Primeira Prova</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para cadastro rápido de Disciplina -->
+<div id="modal-disciplina" class="modal-backdrop">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a;">Cadastrar Nova Disciplina</h3>
+            <button type="button" onclick="closeModal('modal-disciplina')" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form action="{{ url_for('provas.criar_disciplina') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="disc_nome">Nome da Disciplina *</label>
+                <input type="text" name="nome" id="disc_nome" class="form-control" placeholder="Ex: Matemática, Física, História" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="disc_codigo">Código / Sigla (Opcional)</label>
+                <input type="text" name="codigo" id="disc_codigo" class="form-control" placeholder="Ex: MAT-101">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="disc_desc">Descrição (Opcional)</label>
+                <input type="text" name="descricao" id="disc_desc" class="form-control" placeholder="Ex: Ensino Médio 1º Ano">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disciplina')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Disciplina</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

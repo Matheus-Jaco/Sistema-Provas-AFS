@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Banco de Questões — EduProvas{% endblock %}
+{% block page_title %}Banco de Questões{% endblock %}
+{% block page_subtitle %}Gerencie e filtre o acervo de questões reutilizáveis da escola{% endblock %}
+
+{% block top_actions %}
+<a href="{{ url_for('questoes.create') }}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Nova Questão
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros e Busca -->
+<div class="card" style="padding: 16px 24px; margin-bottom: 20px;">
+    <form method="GET" action="{{ url_for('questoes.list_questoes') }}" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 200px;">
+            <label class="form-label" style="font-size: 12px;">Busca por texto ou tag</label>
+            <input type="text" name="busca" value="{{ busca }}" class="form-control" placeholder="Digite termos da questão ou tags...">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label" style="font-size: 12px;">Disciplina</label>
+            <select name="disciplina_id" class="form-select">
+                <option value="">Todas as disciplinas</option>
+                {% for d in disciplinas %}
+                <option value="{{ d.id }}" {% if disciplina_id == d.id %}selected{% endif %}>{{ d.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 130px;">
+            <label class="form-label" style="font-size: 12px;">Dificuldade</label>
+            <select name="dificuldade" class="form-select">
+                <option value="">Todas</option>
+                <option value="facil" {% if dificuldade == 'facil' %}selected{% endif %}>Fácil</option>
+                <option value="media" {% if dificuldade == 'media' %}selected{% endif %}>Média</option>
+                <option value="dificil" {% if dificuldade == 'dificil' %}selected{% endif %}>Difícil</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> Filtrar</button>
+            <a href="{{ url_for('questoes.list_questoes') }}" class="btn btn-secondary" style="color: var(--text-secondary);">Limpar</a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela do Banco de Questões -->
+<div class="card">
+    {% if questoes %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>Enunciado</th>
+                    <th>Disciplina</th>
+                    <th>Dificuldade</th>
+                    <th>Alternativas</th>
+                    <th>Autor</th>
+                    <th style="width: 130px; text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in questoes %}
+                <tr>
+                    <td><span class="badge badge-code">#{{ q.id }}</span></td>
+                    <td style="max-width: 360px;">
+                        <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">{{ q.enunciado }}</div>
+                        {% if q.tags %}
+                        <div>
+                            {% for tag in q.tags.split(',') %}
+                            <span style="font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">#{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ q.disciplina.nome }}</strong></td>
+                    <td>
+                        {% if q.dificuldade == 'facil' %}
+                            <span class="badge badge-facil">Fácil</span>
+                        {% elif q.dificuldade == 'media' %}
+                            <span class="badge badge-media">Média</span>
+                        {% else %}
+                            <span class="badge badge-dificil">Difícil</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-multipla">{{ q.itens|length }} itens</span>
+                        {% if q.item_correto %}
+                        <div style="font-size: 11px; color: var(--accent-success); margin-top: 2px;">
+                            <i class="bi bi-check-lg"></i> Resp: {{ q.item_correto.texto[:25] }}...
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">{{ q.autor.nome }}</td>
+                    <td style="text-align: right;">
+                        <div class="btn-group" style="justify-content: flex-end;">
+                            <a href="{{ url_for('questoes.edit', id=q.id) }}" class="btn btn-sm btn-secondary" title="Editar Questão"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ url_for('questoes.delete', id=q.id) }}" method="POST" onsubmit="return confirm('Deseja realmente excluir a Questão #{{ q.id }}?');">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir Questão"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px 20px;">
+        <p style="font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Nenhuma questão encontrada</p>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Cadastre novas questões ou limpe os filtros de busca.</p>
+        <a href="{{ url_for('questoes.create') }}" class="btn btn-primary">Cadastrar Primeira Questão</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

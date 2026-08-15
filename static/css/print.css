@@ -1,0 +1,49 @@
+/* ==========================================================================
+   CSS DE IMPRESSÃO OTINIZADA PARA PAPEL A4
+   Oculta a interface de usuário (sidebar, topbar, botões) na hora de imprimir
+   ========================================================================== */
+
+@media print {
+    /* Ocultar elementos da interface administrativa */
+    .sidebar,
+    .top-navbar,
+    .btn,
+    .no-print,
+    .alert,
+    .sidebar-footer {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Helvetica Neue', Arial, sans-serif !important;
+        font-size: 11pt !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .app-wrapper,
+    .main-content,
+    .content-container {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .exam-preview-container {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .exam-question-item {
+        page-break-inside: avoid !important;
+    }
+
+    h1, h2, h3, h4 {
+        color: #000000 !important;
+    }
+}

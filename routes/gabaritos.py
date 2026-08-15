@@ -1,0 +1,47 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, Response
+from flask_login import login_required
+from models.prova_gerada import ProvaGerada
+from models.prova_base import ProvaBase
+from services.export_service import gerar_pdf_gabarito
+
+gabaritos_bp = Blueprint('gabaritos', __name__, url_prefix='/gabaritos')
+
+@gabaritos_bp.route('/versao/<int:prova_gerada_id>')
+@login_required
+def visualizar(prova_gerada_id):
+    pg = ProvaGerada.query.get_or_404(prova_gerada_id)
+    gabaritos = sorted(pg.gabaritos, key=lambda x: x.numero_questao)
+    return render_template('gabaritos/visualizar.html', prova_gerada=pg, gabaritos=gabaritos)
+
+@gabaritos_bp.route('/base/<int:prova_base_id>/matriz')
+@login_required
+def matriz(prova_base_id):
+    pb = ProvaBase.query.get_or_404(prova_base_id)
+    versoes = sorted(pb.versoes_geradas, key=lambda v: v.numero_versao)
+
+    # Coletar número de questões
+    total_questoes = len(pb.questoes_associadas)
+
+    # Estruturar matriz: [ {versao: pg, gabarito_dict: {1: 'C', 2: 'A', ...}} ]
+    matriz_gabaritos = []
+    for v in versoes:
+        mapa_g = {g.numero_questao: g.letra_correta for g in v.gabaritos}
+        matriz_gabaritos.append({
+            'versao': v,
+            'mapa': mapa_g
+        })
+
+    return render_template('gabaritos/matriz.html', prova_base=pb, total_questoes=total_questoes, matriz=matriz_gabaritos)
+
+@gabaritos_bp.route('/versao/<int:prova_gerada_id>/pdf')
+@login_required
+def download_pdf_gabarito(prova_gerada_id):
+    pg = ProvaGerada.query.get_or_404(prova_gerada_id)
+    pdf_bytes = gerar_pdf_gabarito(pg.id)
+    filename = f"Gabarito_V{pg.numero_versao:02d}_{pg.codigo_versao}.pdf"
+
+    return Response(
+        pdf_bytes,
+        mimetype='application/pdf',
+        headers={'Content-Disposition': f'inline; filename="{filename}"'}
+    )

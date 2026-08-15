@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — EduProvas{% endblock %}
+{% block page_title %}Visão Geral Institucional{% endblock %}
+{% block page_subtitle %}Estatísticas do banco de questões e provas ativas{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <a href="{{ url_for('questoes.create') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-plus-lg"></i> Nova Questão
+    </a>
+    <a href="{{ url_for('provas.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-lightning-charge-fill"></i> Gerar Prova Embaralhada
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Cards de Métricas -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon blue"><i class="bi bi-file-earmark-text"></i></div>
+        <div class="metric-data">
+            <h3>{{ total_questoes }}</h3>
+            <p>Questões Cadastradas</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon green"><i class="bi bi-book"></i></div>
+        <div class="metric-data">
+            <h3>{{ total_disciplinas }}</h3>
+            <p>Disciplinas Ativas</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon amber"><i class="bi bi-journal-check"></i></div>
+        <div class="metric-data">
+            <h3>{{ total_provas_base }}</h3>
+            <p>Provas-Base Criadas</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon purple"><i class="bi bi-arrow-repeat"></i></div>
+        <div class="metric-data">
+            <h3>{{ total_provas_geradas }}</h3>
+            <p>Versões Embaralhadas</p>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Últimas Provas Base Criadas -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Provas-Base Recentes</h2>
+            <a href="{{ url_for('provas.list_provas') }}" style="font-size: 13px; color: var(--brand-primary); text-decoration: none; font-weight: 500;">Ver todas &rarr;</a>
+        </div>
+        {% if ultimas_provas_base %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Disciplina</th>
+                        <th>Turma</th>
+                        <th>Versões</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pb in ultimas_provas_base %}
+                    <tr>
+                        <td><strong>{{ pb.titulo }}</strong></td>
+                        <td>{{ pb.disciplina.nome }}</td>
+                        <td><span class="badge badge-code">{{ pb.turma }}</span></td>
+                        <td><strong>{{ pb.versoes_geradas|length }}</strong></td>
+                        <td>
+                            <a href="{{ url_for('provas.geradas_list', prova_base_id=pb.id) }}" class="btn btn-sm btn-secondary" style="padding: 3px 8px; font-size: 12px;">
+                                Versões
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-secondary); text-align: center; padding: 20px 0;">Nenhuma prova-base criada ainda.</p>
+        {% endif %}
+    </div>
+
+    <!-- Últimas Questões Cadastradas -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Questões Recentes</h2>
+            <a href="{{ url_for('questoes.list_questoes') }}" style="font-size: 13px; color: var(--brand-primary); text-decoration: none; font-weight: 500;">Ver banco &rarr;</a>
+        </div>
+        {% if ultimas_questoes %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Enunciado</th>
+                        <th>Disciplina</th>
+                        <th>Dificuldade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in ultimas_questoes %}
+                    <tr>
+                        <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ q.enunciado }}
+                        </td>
+                        <td>{{ q.disciplina.nome }}</td>
+                        <td>
+                            {% if q.dificuldade == 'facil' %}
+                                <span class="badge badge-facil">Fácil</span>
+                            {% elif q.dificuldade == 'media' %}
+                                <span class="badge badge-media">Média</span>
+                            {% else %}
+                                <span class="badge badge-dificil">Difícil</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-secondary); text-align: center; padding: 20px 0;">Nenhuma questão no banco ainda.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

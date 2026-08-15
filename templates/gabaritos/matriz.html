@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Matriz Comparativa de Gabaritos — {{ prova_base.titulo }} — EduProvas{% endblock %}
+{% block page_title %}Matriz Comparativa de Gabaritos{% endblock %}
+{% block page_subtitle %}Visão rápida e consolidada das respostas corretas para todas as versões geradas{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group no-print">
+    <a href="{{ url_for('provas.geradas_list', prova_base_id=prova_base.id) }}" class="btn btn-secondary">
+        &larr; Voltar às Versões
+    </a>
+    <button type="button" onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Imprimir Matriz
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">{{ prova_base.titulo }}</h2>
+            <p style="font-size: 13px; color: var(--text-secondary);">
+                Disciplina: <strong>{{ prova_base.disciplina.nome }}</strong> | Turma: <strong>{{ prova_base.turma }}</strong>
+            </p>
+        </div>
+        <div>
+            <span class="badge badge-multipla">{{ matriz|length }} versão(ões) gerada(s)</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table" style="text-align: center;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; width: 120px;">Questão nº</th>
+                    {% for m in matriz %}
+                    <th style="text-align: center;">
+                        <div>Versão {{ "%02d"|format(m.versao.numero_versao) }}</div>
+                        <span class="badge badge-code" style="font-size: 10px;">{{ m.versao.codigo_versao }}</span>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for q_num in range(1, total_questoes + 1) %}
+                <tr>
+                    <td style="text-align: left; font-weight: 700; color: #0f172a;">
+                        Questão {{ "%02d"|format(q_num) }}
+                    </td>
+                    {% for m in matriz %}
+                    <td>
+                        <span style="font-size: 15px; font-weight: 700; color: #1e40af; background: #eff6ff; padding: 4px 10px; border-radius: 4px; border: 1px solid #bfdbfe;">
+                            {{ m.mapa.get(q_num, '-') }}
+                        </span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

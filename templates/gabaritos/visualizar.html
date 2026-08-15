@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Gabarito Oficial — Versão {{ prova_gerada.numero_versao }} — EduProvas{% endblock %}
+{% block page_title %}Gabarito Oficial — Versão {{ "%02d"|format(prova_gerada.numero_versao) }}{% endblock %}
+{% block page_subtitle %}Código da Versão: {{ prova_gerada.codigo_versao }} | Prova: {{ prova_gerada.prova_base.titulo }}{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group no-print">
+    <a href="{{ url_for('provas.geradas_list', prova_base_id=prova_gerada.prova_base_id) }}" class="btn btn-secondary">
+        &larr; Voltar às Versões
+    </a>
+    <a href="{{ url_for('gabaritos.download_pdf_gabarito', prova_gerada_id=prova_gerada.id) }}" target="_blank" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-pdf"></i> Baixar PDF Gabarito
+    </a>
+    <button type="button" onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Imprimir Gabarito
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 32px;">
+    <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px;">
+        <h2 style="font-size: 18px; font-weight: 700; color: #0f172a;">GABARITO OFICIAL DA AVALIAÇÃO</h2>
+        <p style="font-size: 14px; font-weight: 600; color: #334155;">{{ prova_gerada.prova_base.titulo }}</p>
+        <div style="margin-top: 8px;">
+            <span class="badge badge-code" style="font-size: 14px; font-weight: 700;">Versão {{ "%02d"|format(prova_gerada.numero_versao) }} — Código {{ prova_gerada.codigo_versao }}</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table" style="text-align: center;">
+            <thead>
+                <tr>
+                    <th style="text-align: center; width: 35%;">Questão nº</th>
+                    <th style="text-align: center; width: 35%;">Resposta Correta</th>
+                    <th style="text-align: center; width: 30%;">ID Questão</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in gabaritos %}
+                <tr>
+                    <td style="font-weight: 600; color: #0f172a;">Questão {{ "%02d"|format(g.numero_questao) }}</td>
+                    <td>
+                        <span style="font-size: 16px; font-weight: 700; color: #1e40af; background: #eff6ff; padding: 4px 12px; border-radius: 4px; border: 1px solid #bfdbfe;">
+                            {{ g.letra_correta }}
+                        </span>
+                    </td>
+                    <td><span class="badge badge-code">#{{ g.questao_id }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

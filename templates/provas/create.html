@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Prova & Gerar Versões — EduProvas{% endblock %}
+{% block page_title %}Construtor de Prova & Gerador Embaralhado{% endblock %}
+{% block page_subtitle %}Defina os metadados da prova, selecione as questões e informe quantas versões embaralhadas deseja gerar{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('provas.create') }}" method="POST">
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+        
+        <!-- Coluna Esquerda: Metadados da Prova -->
+        <div>
+            <div class="card" style="position: sticky; top: 20px;">
+                <div class="card-header">
+                    <h2 class="card-title">1. Dados da Prova</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="titulo">Título da Avaliação *</label>
+                    <input type="text" name="titulo" id="titulo" class="form-control" placeholder="Ex: Prova Mensal de Matemática - 1º Bimestre" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="prova-disciplina-select">Disciplina *</label>
+                    <select name="disciplina_id" id="prova-disciplina-select" class="form-select" required>
+                        <option value="">Selecione uma disciplina...</option>
+                        {% for d in disciplinas %}
+                        <option value="{{ d.id }}">{{ d.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="turma">Turma / Série *</label>
+                        <input type="text" name="turma" id="turma" class="form-control" placeholder="Ex: 3º Ano A" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="data_aplicacao">Data de Aplicação</label>
+                        <input type="date" name="data_aplicacao" id="data_aplicacao" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="instrucoes">Instruções aos Alunos</label>
+                    <textarea name="instrucoes" id="instrucoes" class="form-control" rows="3" placeholder="Ex: Use caneta preta ou azul. Duração: 50 minutos. Proibido consultar material."></textarea>
+                </div>
+
+                <!-- Campo X: Quantidade de Versões a Gerar -->
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: var(--radius-md); margin-top: 20px;">
+                    <label class="form-label" for="quantidade_x" style="color: #1e40af; font-size: 14px; font-weight: 700;">
+                        <i class="bi bi-arrow-repeat"></i> Nº de Versões Embaralhadas (X) *
+                    </label>
+                    <p style="font-size: 12px; color: #3b82f6; margin-bottom: 8px;">
+                        Cada versão terá ordem de questões e alternativas embaralhadas de forma 100% independente, gerando seu gabarito automático.
+                    </p>
+                    <input type="number" name="quantidade_x" id="quantidade_x" class="form-control" min="1" max="50" value="4" required style="font-size: 16px; font-weight: 700; text-align: center;">
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">
+                        <i class="bi bi-gear-wide-connected"></i> Criar Prova & Gerar Versões
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Seleção de Questões do Banco -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">2. Selecionar Questões do Banco</h2>
+                        <p style="font-size: 12px; color: var(--text-secondary);">Marque as questões que farão parte deste modelo de prova.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="selected-questions-counter" class="badge badge-multipla" style="font-size: 13px; padding: 6px 12px;">0 selecionada(s)</span>
+                        <button type="button" id="btn-select-all" class="btn btn-sm btn-secondary">Marcar Visíveis</button>
+                        <button type="button" id="btn-deselect-all" class="btn btn-sm btn-secondary">Desmarcar Tudo</button>
+                    </div>
+                </div>
+
+                {% if questoes %}
+                <div style="display: flex; flex-direction: column; gap: 12px; max-height: 650px; overflow-y: auto; padding-right: 4px;">
+                    {% for q in questoes %}
+                    <div class="builder-question-card" data-disciplina-id="{{ q.disciplina_id }}" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: #ffffff;">
+                        <div style="display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" name="questoes_ids[]" value="{{ q.id }}" class="question-checkbox" id="q_check_{{ q.id }}" style="width: 18px; height: 18px; margin-top: 3px; cursor: pointer;">
+                            <label for="q_check_{{ q.id }}" style="flex: 1; cursor: pointer;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="badge badge-code">#{{ q.id }}</span>
+                                        <span style="font-size: 12px; font-weight: 600; color: #1e40af;">{{ q.disciplina.nome }}</span>
+                                    </div>
+                                    <div>
+                                        {% if q.dificuldade == 'facil' %}
+                                            <span class="badge badge-facil">Fácil</span>
+                                        {% elif q.dificuldade == 'media' %}
+                                            <span class="badge badge-media">Média</span>
+                                        {% else %}
+                                            <span class="badge badge-dificil">Difícil</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 8px;">
+                                    {{ q.enunciado }}
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-secondary); background: #f8fafc; padding: 8px; border-radius: 4px;">
+                                    <strong>Itens ({{ q.itens|length }}):</strong>
+                                    {% for item in q.itens %}
+                                        <span style="margin-right: 8px; {% if item.correta %}color: var(--accent-success); font-weight: 600;{% endif %}">
+                                            ({{ loop.index }}) {{ item.texto[:30] }}{% if item.correta %} <i class="bi bi-check-lg"></i>{% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px 20px;">
+                    <p style="font-size: 14px; color: var(--text-secondary);">Nenhuma questão encontrada no banco.</p>
+                    <a href="{{ url_for('questoes.create') }}" class="btn btn-sm btn-primary" style="margin-top: 10px;">Cadastrar Questões Primeiro</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/prova_builder.js') }}"></script>
+{% endblock %}

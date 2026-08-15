@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Prova Versão {{ prova_gerada.numero_versao }} ({{ prova_gerada.codigo_versao }}) — EduProvas{% endblock %}
+{% block page_title %}Visualização da Prova do Aluno{% endblock %}
+{% block page_subtitle %}Código da Versão: {{ prova_gerada.codigo_versao }} | Seed: {{ prova_gerada.seed }}{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group no-print">
+    <a href="{{ url_for('provas.geradas_list', prova_base_id=prova_gerada.prova_base_id) }}" class="btn btn-secondary">
+        &larr; Voltar às Versões
+    </a>
+    <a href="{{ url_for('provas.download_pdf_prova', prova_gerada_id=prova_gerada.id) }}" target="_blank" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-pdf"></i> Baixar PDF
+    </a>
+    <button type="button" onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Imprimir Prova (A4)
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="exam-preview-container">
+    <!-- Cabeçalho Institucional da Prova (Papel A4) -->
+    <div class="exam-header">
+        <h2>SISTEMA INSTITUCIONAL DE ENSINO</h2>
+        <h3>Avaliação de {{ prova_gerada.prova_base.disciplina.nome.upper() }}</h3>
+    </div>
+
+    <!-- Quadro de Identificação do Aluno / Turma / Versão -->
+    <div class="exam-student-box">
+        <div>
+            <div><strong>Título:</strong> {{ prova_gerada.prova_base.titulo }}</div>
+            <div style="margin-top: 4px;"><strong>Turma:</strong> {{ prova_gerada.prova_base.turma }}</div>
+            <div style="margin-top: 6px;"><strong>Aluno(a):</strong> __________________________________________________</div>
+        </div>
+        <div style="text-align: right;">
+            <div><strong>Versão:</strong> <span class="badge badge-code" style="font-size: 13px;">{{ prova_gerada.codigo_versao }}</span></div>
+            <div style="margin-top: 4px;"><strong>Data:</strong> {{ prova_gerada.prova_base.data_aplicacao.strftime('%d/%m/%Y') if prova_gerada.prova_base.data_aplicacao else '___/___/______' }}</div>
+            <div style="margin-top: 6px;"><strong>Nota:</strong> ________</div>
+        </div>
+    </div>
+
+    {% if prova_gerada.prova_base.instrucoes %}
+    <div style="font-size: 12px; color: #475569; border-left: 3px solid #1e40af; padding-left: 10px; margin-bottom: 20px;">
+        <strong>Instruções:</strong> {{ prova_gerada.prova_base.instrucoes }}
+    </div>
+    {% endif %}
+
+    <hr style="border: 0; border-top: 1px solid #cbd5e1; margin-bottom: 24px;">
+
+    <!-- Renderização das Questões Embaralhadas -->
+    {% for pgq in pg_questoes %}
+    <div class="exam-question-item">
+        <div class="exam-question-title">
+            Questão {{ "%02d"|format(pgq.ordem_embaralhada) }}. {{ pgq.questao.enunciado }}
+        </div>
+        <ul class="exam-options-list">
+            {% for item_emb in itens_por_questao.get(pgq.questao.id, []) %}
+            <li class="exam-option-item">
+                <span style="font-weight: 600; min-width: 30px;">( {{ item_emb.letra_atribuida }} )</span>
+                <span>{{ item_emb.item.texto }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

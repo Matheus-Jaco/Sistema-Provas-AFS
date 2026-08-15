@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Questão — EduProvas{% endblock %}
+{% block page_title %}Cadastrar Nova Questão{% endblock %}
+{% block page_subtitle %}Adicione um enunciado e suas alternativas com a indicação da resposta correta{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 850px; margin: 0 auto;">
+    <form action="{{ url_for('questoes.create') }}" method="POST">
+        <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" for="disciplina_id" style="margin-bottom: 0;">Disciplina *</label>
+                    <button type="button" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="openModal('modal-nova-disciplina-questao')">
+                        <i class="bi bi-plus-circle"></i> Nova Disciplina
+                    </button>
+                </div>
+                <select name="disciplina_id" id="disciplina_id" class="form-select" required>
+                    <option value="">Selecione uma disciplina...</option>
+                    {% for d in disciplinas %}
+                    <option value="{{ d.id }}">{{ d.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="dificuldade">Dificuldade *</label>
+                <select name="dificuldade" id="dificuldade" class="form-select" required>
+                    <option value="facil">Fácil</option>
+                    <option value="media" selected>Média</option>
+                    <option value="dificil">Difícil</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="tipo">Tipo de Questão</label>
+                <select name="tipo" id="tipo" class="form-select">
+                    <option value="multipla_escolha">Múltipla Escolha</option>
+                    <option value="verdadeiro_falso">Verdadeiro / Falso</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="enunciado">Enunciado da Questão *</label>
+            <textarea name="enunciado" id="enunciado" class="form-control" rows="4" placeholder="Digite o enunciado completo da questão..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="tags">Tags / Palavras-chave (Opcional)</label>
+            <input type="text" name="tags" id="tags" class="form-control" placeholder="Ex: álgebra, equações, vestibular-2025">
+        </div>
+
+        <!-- Seção de Alternativas / Itens -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 24px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 600; color: #0f172a;">Alternativas / Itens</h3>
+                    <p style="font-size: 12px; color: var(--text-secondary);">Marque o botão de opção (radio) ao lado da alternativa <strong>correta</strong>.</p>
+                </div>
+                <button type="button" id="btn-add-option" class="btn btn-sm btn-secondary">
+                    <i class="bi bi-plus-circle"></i> Adicionar Alternativa
+                </button>
+            </div>
+
+            <div id="options-container">
+                <!-- 4 opções padrão iniciais -->
+                {% set default_letters = ['A', 'B', 'C', 'D'] %}
+                {% for idx in range(4) %}
+                <div class="option-row" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="item_correto" value="{{ idx }}" id="radio_opt_{{ idx }}" {% if idx == 0 %}checked{% endif %}>
+                        <label for="radio_opt_{{ idx }}" style="font-weight: 600; width: 20px;">{{ default_letters[idx] }})</label>
+                    </div>
+                    <input type="text" name="item_texto[]" class="form-control" placeholder="Texto da alternativa {{ default_letters[idx] }}..." required>
+                    <button type="button" class="btn btn-sm btn-secondary btn-remove-option" style="color: #b91c1c;" title="Remover alternativa">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <a href="{{ url_for('questoes.list_questoes') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar no Banco de Questões</button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal para cadastro rápido de Disciplina durante criação de Questão -->
+<div id="modal-nova-disciplina-questao" class="modal-backdrop">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a;">Cadastrar Nova Disciplina</h3>
+            <button type="button" onclick="closeModal('modal-nova-disciplina-questao')" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form id="form-quick-disciplina">
+            <div class="form-group">
+                <label class="form-label" for="quick_disc_nome">Nome da Disciplina *</label>
+                <input type="text" id="quick_disc_nome" class="form-control" placeholder="Ex: Biologia, Geografia, Literatura" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="quick_disc_codigo">Código / Sigla (Opcional)</label>
+                <input type="text" id="quick_disc_codigo" class="form-control" placeholder="Ex: BIO-100">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="quick_disc_desc">Descrição (Opcional)</label>
+                <input type="text" id="quick_disc_desc" class="form-control" placeholder="Ex: Ensino Fundamental / Médio">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-nova-disciplina-questao')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar e Selecionar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const formQuick = document.getElementById('form-quick-disciplina');
+    if (formQuick) {
+        formQuick.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('quick_disc_nome').value.trim();
+            const codigo = document.getElementById('quick_disc_codigo').value.trim();
+            const descricao = document.getElementById('quick_disc_desc').value.trim();
+
+            if (!nome) return;
+
+            try {
+                const res = await fetch('{{ url_for("questoes.criar_disciplina_rapida") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, codigo, descricao })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const select = document.getElementById('disciplina_id');
+                    let opt = select.querySelector(`option[value="${data.id}"]`);
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = data.id;
+                        opt.textContent = data.nome;
+                        select.appendChild(opt);
+                    }
+                    select.value = data.id;
+                    closeModal('modal-nova-disciplina-questao');
+                    formQuick.reset();
+                    alert(`Disciplina "${data.nome}" adicionada e selecionada com sucesso!`);
+                } else {
+                    alert(data.message || 'Erro ao criar disciplina.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de comunicação ao criar disciplina.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
