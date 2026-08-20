@@ -1,148 +1,177 @@
-# EduProvas — Sistema Institucional de Geração e Embaralhamento de Provas
+# EduProvas — Sistema Institucional de Geração de Provas Embaralhadas
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)
-![SQLAlchemy](https://img.shields.io/badge/ORM-SQLAlchemy-red)
-![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20SQLite-00758F?logo=mysql&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen)
-
-Plataforma Web de gestão pedagógica e elaboração de avaliações institucionais desenvolvida em **Python + Flask**, **SQLAlchemy** e **JavaScript ES6**. O sistema permite que instituições de ensino gerenciem um acervo centralizado de questões e gerem automaticamente **múltiplas versões embaralhadas** com **gabaritos oficiais vinculados** e auditáveis.
+Aplicação Web profissional desenvolvida em **Python + Flask**, **SQLAlchemy / MySQL**, **HTML5/CSS3/JavaScript** puro e **Blueprints modulares**, projetada para escolas e colégios criarem provas com **embaralhamento independente de questões e alternativas** e **geração automática de gabaritos**.
 
 ---
 
-## 📌 Principais Recursos
+## Funcionalidades Principais
 
-- **Gestão Centralizada do Banco de Questões (CRUD):**
-  - Cadastro de questões categorizadas por disciplina, nível de dificuldade (*Fácil, Média, Difícil*), modalidade (*Múltipla Escolha* ou *Verdadeiro/Falso*) e *tags* de pesquisa.
-  - Alternativas dinâmicas com validação de gabarito e suporte a múltiplas opções.
-  - Filtros avançados por busca textual, disciplinas ativas e graus de complexidade.
+1. **Gestão do Banco de Questões (CRUD Completo):**
+   - Cadastro de questões com enunciado, disciplina, nível de dificuldade (Fácil, Média, Difícil), tipo (Múltipla Escolha / Verdadeiro ou Falso) e tags.
+   - Alternativas dinâmicas com marcação visual da resposta correta.
+   - Busca por texto, filtro por disciplina e filtro por dificuldade.
 
-- **Construtor Interativo de Provas-Base:**
-  - Interface dinâmica para seleção de questões do banco com contagem em tempo real.
-  - Configuração de metadados pedagógicos (Título da Avaliação, Disciplina, Turma, Data de Aplicação e Instruções para os Alunos).
+2. **Montagem de Prova-Base (Molde):**
+   - Seleção interativa de questões do acervo com contador em tempo real e busca por disciplina.
+   - Definição de metadados pedagógicos (Título, Disciplina, Turma, Data de Aplicação, Instruções para o Aluno).
 
-- **Algoritmo de Embaralhamento Independente (Fisher-Yates):**
-  - Geração de $X$ versões (ex: 4, 10 ou mais) a partir de um único modelo base.
-  - **Dupla Permutação:** Reordenação estocástica independente da sequência das questões e das alternativas de cada questão.
-  - **Mapeamento de Gabaritos Automático:** Rastreia as posições reordenadas e gera o gabarito oficial para cada versão.
-  - **Auditabilidade via Seed:** Cada versão gerada possui um código único (ex: `V01-A9F32B`) e uma *seed* matemática registrada para auditoria pedagógica.
+3. **Geração de $X$ Versões Embaralhadas (`shuffle_service.py`):**
+   - Campo para definir a quantidade $X$ de modelos diferentes a gerar.
+   - **Algoritmo Fisher-Yates com Seed Registrada:** Embaralha a ordem das questões e das alternativas dentro de cada questão de forma 100% independente por versão.
+   - **Gabarito Automático:** Mapeia dinamicamente as novas posições das alternativas (A, B, C, D...) de volta para a resposta correta original.
+   - **Identificador Único:** Cada versão recebe um código exclusivo (Ex: `V01-A9F32B`) e *seed* de auditoria/reprodutibilidade.
 
-- **Exportação, Impressão e Download em Lote:**
-  - **Impressão Nativa A4 (`@media print`):** Formatação limpa conforme normas de avaliações escolares.
-  - **Exportação em PDF Nativo (ReportLab):** Geração individual de provas e gabaritos.
-  - **Empacotamento ZIP:** Download em lote com todas as versões em PDF, gabaritos e matriz comparativa.
-  - **Matriz Comparativa de Gabaritos:** Tabela unificada exibindo as respostas de todas as versões lado a lado.
+4. **Exportação & Impressão:**
+   - **Visualização em Tela e Impressão Direta (`@media print`):** Layout A4 limpo, sem menus administrativos, com cabeçalho escolar oficial.
+   - **PDF Nativo (ReportLab):** Geração individual de PDFs da prova do aluno e do gabarito oficial.
+   - **Download em Lote (ZIP):** Empacota todas as $X$ provas + $X$ gabaritos em arquivo `.ZIP` com 1 clique, incluindo um resumo consolidado em texto.
+   - **Matriz Comparativa de Gabaritos:** Tabela unificada exibindo as respostas de todas as versões lado a lado.
 
-- **Segurança e Controle de Acesso:**
-  - Autenticação de professores e coordenadores via `Flask-Login` e criptografia de senhas com `Werkzeug.security`.
+5. **Autenticação & Segurança:**
+   - Login/Logout com hash seguro de senha via `Werkzeug.security` e gerenciamento de sessão via `Flask-Login`.
 
 ---
 
-## 🏗️ Arquitetura e Estrutura de Arquivos
+## Estrutura do Projeto
 
 ```text
 sistema_provas/
 ├── app.py                      # Ponto de entrada da aplicação Flask
-├── config.py                   # Configurações de ambiente e ORM
-├── requirements.txt            # Dependências da aplicação
-├── schema.sql                  # DDL de criação das tabelas (MySQL 8.0+)
-├── seed.py                     # Script de população inicial de dados (Demo)
-├── .env.example                # Template de variáveis de ambiente
-├── .gitignore                  # Regras de exclusão de versionamento
-├── README.md                   # Documentação do projeto
-├── models/                     # Camada de Modelos SQLAlchemy (ORM)
-│   ├── usuario.py              # Autenticação e Perfis (Professor / Coordenador)
-│   ├── disciplina.py           # Gestão de Disciplinas / Matérias
-│   ├── questao.py              # Banco de Questões
-│   ├── item.py                 # Alternativas / Opções da Questão
-│   ├── prova_base.py           # Modelo / Molde da Prova
-│   ├── prova_gerada.py         # Instância da Versão Embaralhada
-│   └── gabarito.py             # Mapeamento do Gabarito Oficial
-├── services/                   # Camada de Regras de Negócio e Serviços
-│   ├── shuffle_service.py      # Algoritmo Fisher-Yates e auditoria de Seed
-│   └── export_service.py       # Geração de PDFs e pacote ZIP
-├── routes/                     # Camada de Controladores / Blueprints Flask
-│   ├── auth.py                 # Rotas de Login e Session Management
-│   ├── dashboard.py            # Visão Geral e Estatísticas
-│   ├── questoes.py             # Rotas de Gestão do Banco de Questões
-│   ├── provas.py               # Rotas do Construtor de Provas e Versões
-│   └── gabaritos.py            # Rotas da Matriz e Gabaritos Oficiais
-├── static/                     # Ativos Estáticos da Interface
-│   ├── css/                    # Estilos CSS (Design System Inter Font)
-│   └── js/                     # Interatividade Frontend
-├── templates/                  # Views / Layouts Jinja2
-└── tests/                      # Suíte de Testes Automatizados (Unittest)
+├── config.py                   # Configurações da aplicação e conexões DB
+├── requirements.txt            # Dependências Python
+├── schema.sql                  # Script SQL DDL para MySQL 8.0+
+├── seed.py                     # Script de povoamento inicial (demo data)
+├── .env.example                # Exemplo de variáveis de ambiente
+├── README.md                   # Instruções de instalação e uso
+├── models/                     # Modelos SQLAlchemy relacional
+│   ├── __init__.py
+│   ├── usuario.py
+│   ├── disciplina.py
+│   ├── questao.py
+│   ├── item.py
+│   ├── prova_base.py
+│   ├── prova_gerada.py
+│   └── gabarito.py
+├── services/                   # Módulos de regra de negócio
+│   ├── __init__.py
+│   ├── shuffle_service.py      # Algoritmo Fisher-Yates e mapeamento de gabarito
+│   └── export_service.py       # Geração de PDFs e empacotamento ZIP
+├── routes/                     # Blueprints Flask
+│   ├── __init__.py
+│   ├── auth.py                 # Autenticação (Login, Logout)
+│   ├── dashboard.py            # Métricas e estatísticas gerais
+│   ├── questoes.py             # CRUD de questões e alternativas
+│   ├── provas.py               # Prova-base, embaralhamento e PDF/ZIP
+│   └── gabaritos.py            # Visualização e matriz de gabaritos
+├── static/                     # Arquivos estáticos
+│   ├── css/
+│   │   ├── style.css           # Design System institucional (Inter font)
+│   │   └── print.css           # Estilo otimizado para impressão A4
+│   └── js/
+│       ├── main.js             # Gestão de formulários e alternativas dinâmicas
+│       └── prova_builder.js    # Construtor interativo de prova
+├── templates/                  # Templates Jinja2
+│   ├── base.html               # Shell com sidebar e mensagens flash
+│   ├── auth/                   # Tela de login
+│   ├── dashboard/              # Painel principal
+│   ├── questoes/               # Lista, cadastro e edição de questões
+│   ├── provas/                 # Lista, construtor, versões e visualização A4
+│   └── gabaritos/              # Gabarito individual e matriz comparativa
+└── tests/                      # Suíte de testes automatizados
+    ├── __init__.py
+    └── test_shuffle.py         # Teste unitário do Fisher-Yates e gabarito
 ```
 
 ---
 
-## 🚀 Guia de Instalação e Execução
+## Requisitos de Ambiente
 
-### 1. Pré-requisitos
 - **Python:** 3.10 ou superior
-- **Gerenciador de Pacotes:** `pip`
+- **Banco de Dados:** MySQL 8.0+ (ou SQLite automático out-of-the-box para testes rápidos)
 
-### 2. Configuração do Ambiente
+---
 
+## Instalação e Execução Passo a Passo
+
+### 1. Clonar ou Acessar o Diretório
 ```bash
-# Clonar o repositório
-git clone https://github.com/Matheus-Jaco/sistema_provas.git
 cd sistema_provas
+```
 
-# Criar ambiente virtual
+### 2. Criar Ambiente Virtual (Recomendado)
+```bash
+# Windows
 python -m venv venv
-
-# Ativar o ambiente virtual
-# No Windows:
 venv\Scripts\activate
-# No Linux/macOS:
-source venv/bin/activate
 
-# Instalar dependências
+# Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Instalar Dependências
+```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar Banco de Dados
+### 4. Configurar Banco de Dados MySQL
 
-- **Modo Desenvolvimento Rápido (SQLite Automático):**
-  Caso nenhum arquivo `.env` com dados de banco seja especificado, o sistema inicializa automaticamente um banco de dados SQLite local (`sistema_provas.db`).
+#### Opção A: Usar MySQL
+1. Abra o MySQL Workbench ou terminal MySQL e execute o script `schema.sql`:
+   ```bash
+   mysql -u root -p < schema.sql
+   ```
+2. Crie um arquivo `.env` baseado no `.env.example`:
+   ```ini
+   FLASK_APP=app.py
+   FLASK_ENV=development
+   SECRET_KEY=sua_chave_secreta_institucional_2026
 
-- **Modo Produção (MySQL):**
-  Crie um arquivo `.env` baseado em `.env.example` e configure as credenciais do seu servidor MySQL:
-  ```env
-  DB_HOST=localhost
-  DB_PORT=3306
-  DB_USER=seu_usuario
-  DB_PASSWORD=sua_senha
-  DB_NAME=sistema_provas
-  ```
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=sua_senha
+   DB_NAME=sistema_provas
+   ```
 
-### 4. Popular com Dados Iniciais (Opcional)
+#### Opção B: Fallback SQLite (Desenvolvimento Imediato)
+Caso as variáveis de conexão com o MySQL não sejam definidas no `.env`, a aplicação criará e utilizará automaticamente um banco **SQLite** local (`sistema_provas.db`) sem necessidade de configuração prévia.
+
+---
+
+### 5. Povoar o Banco com Dados de Exemplo (Opcional)
+Execute o script `seed.py` para cadastrar usuários padrões, disciplinas e um acervo inicial de questões:
 ```bash
 python seed.py
 ```
-*Credenciais de teste geradas:*
-- **Coordenador:** `admin@escola.edu.br` | Senha: `admin123`
-- **Professor:** `carlos@escola.edu.br` | Senha: `prof123`
 
-### 5. Executar a Aplicação
+Credenciais criadas pelo seed:
+- **E-mail:** `admin@escola.edu.br` | **Senha:** `admin123` (Coordenador)
+- **E-mail:** `carlos@escola.edu.br` | **Senha:** `prof123` (Professor)
+
+---
+
+### 6. Executar a Aplicação Web
 ```bash
 python app.py
 ```
 Acesse no navegador: **`http://127.0.0.1:5000`**
 
----
+## Execução de Testes Automatizados
 
-## 🧪 Suíte de Testes Automatizados
-
-Para executar os testes unitários do algoritmo de embaralhamento e verificação de gabarito:
+Para validar o algoritmo Fisher-Yates, a reprodutibilidade com *seed* e a precisão do mapeamento de gabaritos:
 
 ```bash
-python -m unittest discover -s tests
+python tests/test_shuffle.py
 ```
 
 ---
 
-## 📄 Licença
+## Algoritmo de Embaralhamento (`shuffle_service.py`)
 
-Este projeto está sob licença MIT. Desenvolvido para fins institucionais e educacionais.
+A função `gerar_versoes_embaralhadas` executa a seguinte sequência para cada versão $1..X$:
+1. Define uma `seed` determinística (ou pseudo-aleatória) auditável.
+2. Executa a permutação de Fisher-Yates no vetor de questões da prova-base.
+3. Para cada questão reordenada, executa a permutação de Fisher-Yates no vetor de alternativas.
+4. Atribui a nova sequência de letras (`A`, `B`, `C`, `D`, `E`...) às posições embaralhadas.
+5. Localiza a alternativa que possuía o atributo `correta == True` e registra o mapeamento na tabela `gabaritos` com o novo número da questão e a nova letra atribuída.
