@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão de Professores — CoordenaçãoProvas{% endblock %}
+{% block page_title %}Gestão do Corpo Docente{% endblock %}
+{% block page_subtitle %}Cadastre e gerencie os acessos dos professores ao CoordenaçãoProvas{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <a href="{{ url_for('professores.create') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill"></i> Cadastrar Novo Professor
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-people"></i> Professores Cadastrados</h2>
+        <span class="badge badge-facil">{{ professores|length }} professor(es)</span>
+    </div>
+
+    {% if professores %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome do Professor</th>
+                    <th>E-mail de Login</th>
+                    <th>Questões Criadas</th>
+                    <th>Provas Criadas</th>
+                    <th>Cadastrado em</th>
+                    <th style="width: 160px; text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prof in professores %}
+                <tr>
+                    <td>
+                        <strong style="color: #0f172a; font-size: 14px;">{{ prof.nome }}</strong>
+                        <div style="font-size: 11px; color: var(--text-muted);">Perfil: {{ prof.perfil|capitalize }}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-code">{{ prof.email }}</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-multipla">{{ prof.questoes|length }} questão(ões)</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-media">{{ prof.provas_base|length }} prova(s)</span>
+                    </td>
+                    <td style="font-size: 13px; color: var(--text-muted);">
+                        {{ prof.criado_em.strftime('%d/%m/%Y %H:%M') if prof.criado_em else '-' }}
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="btn-group" style="justify-content: flex-end;">
+                            <a href="{{ url_for('professores.edit', id=prof.id) }}" class="btn btn-sm btn-secondary" title="Editar Dados / Senha">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{{ url_for('professores.delete', id=prof.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir a conta de {{ prof.nome }}?');">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir Conta">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px 20px;">
+        <p style="font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Nenhum professor cadastrado ainda</p>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Cadastre os professores para liberar o login deles no sistema CoordenaçãoProvas.</p>
+        <a href="{{ url_for('professores.create') }}" class="btn btn-primary">Cadastrar Primeiro Professor</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Seção da Coordenação -->
+{% if coordenadores %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-shield-lock"></i> Equipe da CoordenaçãoProvas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Nível de Acesso</th>
+                    <th style="width: 100px; text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coord in coordenadores %}
+                <tr>
+                    <td><strong>{{ coord.nome }}</strong></td>
+                    <td><span class="badge badge-code">{{ coord.email }}</span></td>
+                    <td><span class="badge badge-facil">{{ coord.perfil|upper }}</span></td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('professores.edit', id=coord.id) }}" class="btn btn-sm btn-secondary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

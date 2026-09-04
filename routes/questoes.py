@@ -52,6 +52,10 @@ def list_questoes():
 
     query = Questao.query
 
+    # Se for professor, lista apenas as suas próprias questões; Coordenação vê de todos
+    if not current_user.is_coordenacao:
+        query = query.filter(Questao.criado_por == current_user.id)
+
     if disciplina_id:
         query = query.filter(Questao.disciplina_id == disciplina_id)
     if dificuldade:
@@ -131,6 +135,12 @@ def create():
 @login_required
 def edit(id):
     questao = Questao.query.get_or_404(id)
+
+    # Bloqueia se o professor tentar editar questão de outro
+    if not current_user.is_coordenacao and questao.criado_por != current_user.id:
+        flash('Você só pode editar suas próprias questões.', 'danger')
+        return redirect(url_for('questoes.list_questoes'))
+
     disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
 
     if request.method == 'POST':
@@ -180,6 +190,12 @@ def edit(id):
 @login_required
 def delete(id):
     questao = Questao.query.get_or_404(id)
+
+    # Bloqueia se o professor tentar excluir questão de outro
+    if not current_user.is_coordenacao and questao.criado_por != current_user.id:
+        flash('Você só pode excluir suas próprias questões.', 'danger')
+        return redirect(url_for('questoes.list_questoes'))
+
     db.session.delete(questao)
     db.session.commit()
     flash('Questão removida do banco de dados.', 'info')

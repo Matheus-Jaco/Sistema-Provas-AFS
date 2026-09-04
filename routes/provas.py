@@ -10,13 +10,20 @@ from models.disciplina import Disciplina
 from models.questao import Questao
 from services.shuffle_service import gerar_versoes_embaralhadas
 from services.export_service import gerar_pdf_prova, gerar_pdf_gabarito, gerar_zip_lote_provas
+from services.qr_service import gerar_qrcode_base64
 
 provas_bp = Blueprint('provas', __name__, url_prefix='/provas')
 
 @provas_bp.route('/')
 @login_required
 def list_provas():
-    provas_base = ProvaBase.query.order_by(ProvaBase.criada_em.desc()).all()
+    # A CoordenaçãoProvas tem acesso às provas criadas por todos os professores
+    if current_user.is_coordenacao:
+        provas_base = ProvaBase.query.order_by(ProvaBase.criada_em.desc()).all()
+    else:
+        # Professores veem suas próprias provas e podem acessar os modelos
+        provas_base = ProvaBase.query.filter_by(criado_por=current_user.id).order_by(ProvaBase.criada_em.desc()).all()
+
     disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
     return render_template('provas/list.html', provas_base=provas_base, disciplinas=disciplinas)
 
@@ -46,7 +53,12 @@ def criar_disciplina():
 @login_required
 def create():
     disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
-    questoes_disponiveis = Questao.query.order_by(Questao.criado_em.desc()).all()
+    
+    # Questões disponíveis: Coordenação vê todas, professores veem apenas as suas
+    if current_user.is_coordenacao:
+        questoes_disponiveis = Questao.query.order_by(Questao.criado_em.desc()).all()
+    else:
+        questoes_disponiveis = Questao.query.filter_by(criado_por=current_user.id).order_by(Questao.criado_em.desc()).all()
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
@@ -74,7 +86,7 @@ def create():
             except ValueError:
                 pass
 
-        # 1. Salvar Prova-Base
+        # 1. Salvar Prova-Base com autor
         pb = ProvaBase(
             titulo=titulo,
             disciplina_id=disciplina_id,
@@ -99,7 +111,7 @@ def create():
         # 2. Gerar X Provas Embaralhadas Automaticamente
         try:
             versoes = gerar_versoes_embaralhadas(pb.id, quantidade_x)
-            flash(f'Prova-base criada com sucesso! Foram geradas {len(versoes)} versões embaralhadas.', 'success')
+            flash(f'Prova-base criada com sucesso! Foram geradas {len(versoes)} versões embaralhadas com gabaritos e QR-Codes vinculados.', 'success')
             return redirect(url_for('provas.geradas_list', prova_base_id=pb.id))
         except Exception as e:
             flash(f'Prova base salva, mas ocorreu um erro na geração das versões: {str(e)}', 'danger')
@@ -111,6 +123,11 @@ def create():
 @login_required
 def geradas_list(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
+    # Validar acesso: coordenação ou autor
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Você não tem permissão para visualizar as versões desta prova.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
     versoes = ProvaGerada.query.filter_by(prova_base_id=pb.id).order_by(ProvaGerada.numero_versao).all()
     return render_template('provas/geradas_list.html', prova_base=pb, versoes=versoes)
 
@@ -118,10 +135,11 @@ def geradas_list(prova_base_id):
 @login_required
 def gerar_mais_versoes(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Sem permissão para alterar esta prova.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
     quantidade = request.form.get('quantidade', type=int, default=1)
-    
-    # Descobrir a quantidade de versões já existentes
-    existentes = len(pb.versoes_geradas)
     
     try:
         gerar_versoes_embaralhadas(pb.id, quantidade)
@@ -135,6 +153,11 @@ def gerar_mais_versoes(prova_base_id):
 @login_required
 def visualizar_prova(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
+    pb = pg.prova_base
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Sem permissão para visualizar esta versão.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
     # Ordenar questões embaralhadas
     pg_questoes = sorted(pg.questoes_embaralhadas, key=lambda x: x.ordem_embaralhada)
     
@@ -148,13 +171,29 @@ def visualizar_prova(prova_gerada_id):
     for q_id in itens_por_questao:
         itens_por_questao[q_id] = sorted(itens_por_questao[q_id], key=lambda x: x.ordem_embaralhada)
 
-    return render_template('provas/visualizar_prova.html', prova_gerada=pg, pg_questoes=pg_questoes, itens_por_questao=itens_por_questao)
+    # Gerar QR Code em base64 para a página
+    qr_url = f"{request.host_url.rstrip('/')}/gabaritos/qr/{pg.id}"
+    qr_code_b64 = gerar_qrcode_base64(qr_url)
+
+    return render_template(
+        'provas/visualizar_prova.html',
+        prova_gerada=pg,
+        pg_questoes=pg_questoes,
+        itens_por_questao=itens_por_questao,
+        qr_code_b64=qr_code_b64,
+        qr_url=qr_url
+    )
 
 @provas_bp.route('/versao/<int:prova_gerada_id>/pdf')
 @login_required
 def download_pdf_prova(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
-    pdf_bytes = gerar_pdf_prova(pg.id)
+    pb = pg.prova_base
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Sem permissão para baixar esta prova.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
+    pdf_bytes = gerar_pdf_prova(pg.id, base_url=request.host_url)
     filename = f"Prova_V{pg.numero_versao:02d}_{pg.codigo_versao}.pdf"
     
     return Response(
@@ -167,7 +206,11 @@ def download_pdf_prova(prova_gerada_id):
 @login_required
 def download_zip_lote(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
-    zip_bytes = gerar_zip_lote_provas(pb.id)
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Sem permissão para exportar este lote.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
+    zip_bytes = gerar_zip_lote_provas(pb.id, base_url=request.host_url)
     filename = f"Provas_e_Gabaritos_{pb.titulo.replace(' ', '_')}.zip"
     
     return Response(
@@ -180,6 +223,10 @@ def download_zip_lote(prova_base_id):
 @login_required
 def delete(id):
     pb = ProvaBase.query.get_or_404(id)
+    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+        flash('Você só pode excluir provas que você mesmo criou.', 'danger')
+        return redirect(url_for('provas.list_provas'))
+
     db.session.delete(pb)
     db.session.commit()
     flash('Prova-base e suas versões geradas foram removidas.', 'info')

@@ -14,7 +14,7 @@ def popular_banco():
     with app.app_context():
         admin = Usuario.query.filter_by(email="admin@escola.edu.br").first()
         if not admin:
-            admin = Usuario(nome="Coordenador Pedagógico", email="admin@escola.edu.br", perfil="admin")
+            admin = Usuario(nome="Coordenação Provas", email="admin@escola.edu.br", perfil="admin")
             admin.set_senha("admin123")
             db.session.add(admin)
             db.session.commit()

@@ -17,6 +17,7 @@ from routes.dashboard import dashboard_bp
 from routes.questoes import questoes_bp
 from routes.provas import provas_bp
 from routes.gabaritos import gabaritos_bp
+from routes.professores import professores_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -41,6 +42,7 @@ def create_app(config_class=Config):
     app.register_blueprint(questoes_bp)
     app.register_blueprint(provas_bp)
     app.register_blueprint(gabaritos_bp)
+    app.register_blueprint(professores_bp)
 
     # Inicialização de tabelas e usuário admin padrão
     with app.app_context():
@@ -54,16 +56,16 @@ def create_app(config_class=Config):
 
 def _inicializar_dados_padrao():
     """
-    Cria um usuário padrão e disciplinas de exemplo se o banco estiver vazio.
+    Cria a conta da CoordenaçãoProvas e disciplinas de exemplo se o banco estiver vazio.
     """
     if Usuario.query.count() == 0:
-        admin = Usuario(
-            nome="Coordenador Pedagógico",
+        coordenacao = Usuario(
+            nome="Coordenação Provas",
             email="admin@escola.edu.br",
             perfil="admin"
         )
-        admin.set_senha("admin123")
-        db.session.add(admin)
+        coordenacao.set_senha("admin123")
+        db.session.add(coordenacao)
 
         prof = Usuario(
             nome="Prof. Carlos Silva",
@@ -86,5 +88,5 @@ def _inicializar_dados_padrao():
 app = create_app()
 
 if __name__ == '__main__':
-    print("[INFO] Iniciando Servidor EduProvas em http://127.0.0.1:5000 ...")
+    print("[INFO] Iniciando Servidor CoordenaçãoProvas em http://127.0.0.1:5000 ...")
     app.run(host='127.0.0.1', port=5000, debug=True)

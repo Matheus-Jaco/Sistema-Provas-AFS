@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 
-{% block title %}Provas & Modelos — EduProvas{% endblock %}
+{% block title %}Provas & Modelos — CoordenaçãoProvas{% endblock %}
 {% block page_title %}Provas & Gerador de Versões{% endblock %}
-{% block page_subtitle %}Gerencie modelos de provas e gere versões embaralhadas com gabaritos vinculados{% endblock %}
+{% block page_subtitle %}Gerencie modelos de provas de todos os professores e gere versões com gabaritos vinculados{% endblock %}
 
 {% block top_actions %}
 <div class="btn-group">
@@ -19,7 +19,8 @@
 <!-- Tabela de Provas-Base -->
 <div class="card">
     <div class="card-header">
-        <h2 class="card-title">Modelos de Prova-Base</h2>
+        <h2 class="card-title"><i class="bi bi-journal-bookmark"></i> Modelos de Prova-Base</h2>
+        <span class="badge badge-facil">{{ provas_base|length }} prova(s)</span>
     </div>
 
     {% if provas_base %}
@@ -29,6 +30,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Título da Prova</th>
+                    <th>Professor / Autor</th>
                     <th>Disciplina</th>
                     <th>Turma</th>
                     <th>Data Aplicação</th>
@@ -44,6 +46,9 @@
                     <td>
                         <strong style="color: #0f172a;">{{ pb.titulo }}</strong>
                         <div style="font-size: 11px; color: var(--text-muted);">Criada em {{ pb.criada_em.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </td>
+                    <td>
+                        <strong style="color: #1e40af; font-size: 13px;">{{ pb.autor.nome if pb.autor else 'Coordenação' }}</strong>
                     </td>
                     <td><strong>{{ pb.disciplina.nome }}</strong></td>
                     <td><span class="badge badge-code">{{ pb.turma }}</span></td>
@@ -71,7 +76,7 @@
     </div>
     {% else %}
     <div style="text-align: center; padding: 40px 20px;">
-        <p style="font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Nenhuma prova-base criada ainda</p>
+        <p style="font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Nenhuma prova-base encontrada</p>
         <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Crie um modelo selecionando questões do banco e defina quantas versões embaralhadas deseja gerar.</p>
         <a href="{{ url_for('provas.create') }}" class="btn btn-primary">Criar Primeira Prova</a>
     </div>

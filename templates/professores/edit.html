@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Usuário #{{ usuario.id }} — CoordenaçãoProvas{% endblock %}
+{% block page_title %}Editar Cadastro: {{ usuario.nome }}{% endblock %}
+{% block page_subtitle %}Atualize os dados cadastrais ou redefina a senha de acesso{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <a href="{{ url_for('professores.list_professores') }}" class="btn btn-secondary">
+        &larr; Voltar à Lista
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 680px; margin: 0 auto; padding: 28px;">
+    <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+        <h2 style="font-size: 18px; font-weight: 700; color: #0f172a;">Editar Dados do Professor</h2>
+    </div>
+
+    <form action="{{ url_for('professores.edit', id=usuario.id) }}" method="POST">
+        <div class="form-group">
+            <label class="form-label" for="nome">Nome Completo do Professor (Nome de Perfil) *</label>
+            <input type="text" name="nome" id="nome" class="form-control" value="{{ usuario.nome }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="email">E-mail Institucional para Login *</label>
+            <input type="email" name="email" id="email" class="form-control" value="{{ usuario.email }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="senha">Redefinir Senha (opcional)</label>
+            <input type="password" name="senha" id="senha" class="form-control" placeholder="Deixe em branco caso não queira alterar a senha">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 28px;">
+            <label class="form-label" for="perfil">Tipo de Perfil</label>
+            <select name="perfil" id="perfil" class="form-control">
+                <option value="professor" {% if usuario.perfil == 'professor' %}selected{% endif %}>Professor</option>
+                <option value="coordenador" {% if usuario.perfil == 'coordenador' %}selected{% endif %}>Coordenador</option>
+                {% if current_user.perfil == 'admin' %}
+                <option value="admin" {% if usuario.perfil == 'admin' %}selected{% endif %}>Administrador</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <a href="{{ url_for('professores.list_professores') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Salvar Alterações
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
