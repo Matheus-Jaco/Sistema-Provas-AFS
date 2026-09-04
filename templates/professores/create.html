@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar Professor — CoordenaçãoProvas{% endblock %}
+{% block page_title %}Cadastrar Professor(a){% endblock %}
+{% block page_subtitle %}Preencha os dados abaixo para liberar o acesso do professor ao CoordenaçãoProvas{% endblock %}
+
+{% block top_actions %}
+<div class="btn-group">
+    <a href="{{ url_for('professores.list_professores') }}" class="btn btn-secondary">
+        &larr; Voltar à Lista
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 680px; margin: 0 auto; padding: 28px;">
+    <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+        <h2 style="font-size: 18px; font-weight: 700; color: #0f172a;">Formulário de Cadastro de Professor</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+            O nome informado abaixo será o <strong>nome do perfil</strong> exibido no sistema após o professor realizar login.
+        </p>
+    </div>
+
+    <form action="{{ url_for('professores.create') }}" method="POST">
+        <div class="form-group">
+            <label class="form-label" for="nome">Nome Completo do Professor (Nome de Perfil) *</label>
+            <input type="text" name="nome" id="nome" class="form-control" placeholder="Ex: Prof. Marcos Souza ou Profa. Maria Oliveira" value="{{ nome or '' }}" required autofocus>
+            <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+                Este nome será exibido na barra lateral e como autor das provas e questões.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="email">E-mail Institucional para Login *</label>
+            <input type="email" name="email" id="email" class="form-control" placeholder="marcos.souza@escola.edu.br" value="{{ email or '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="senha">Senha Inicial de Acesso *</label>
+            <input type="password" name="senha" id="senha" class="form-control" placeholder="••••••••" required>
+            <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+                Informe uma senha segura para o primeiro acesso do professor.
+            </small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 28px;">
+            <label class="form-label" for="perfil">Tipo de Perfil</label>
+            <select name="perfil" id="perfil" class="form-control">
+                <option value="professor" selected>Professor (Elaboração de Provas & Questões)</option>
+                <option value="coordenador">Coordenador (Acesso Completo CoordenaçãoProvas)</option>
+            </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <a href="{{ url_for('professores.list_professores') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Criar Conta & Liberar Acesso
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

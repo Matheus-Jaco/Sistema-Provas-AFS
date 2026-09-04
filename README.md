@@ -1,4 +1,4 @@
-# EduProvas — Sistema Institucional de Geração de Provas Embaralhadas
+# CoordenaçãoProvas — Sistema Institucional de Geração de Provas Embaralhadas
 
 Aplicação Web profissional desenvolvida em **Python + Flask**, **SQLAlchemy / MySQL**, **HTML5/CSS3/JavaScript** puro e **Blueprints modulares**, projetada para escolas e colégios criarem provas com **embaralhamento independente de questões e alternativas** e **geração automática de gabaritos**.
 

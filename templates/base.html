@@ -15,9 +15,9 @@
         <!-- Sidebar Institucional -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-logo-icon">P</div>
+                <div class="sidebar-logo-icon">C</div>
                 <div>
-                    <div class="sidebar-title">EduProvas</div>
+                    <div class="sidebar-title">CoordenaçãoProvas</div>
                     <div class="sidebar-subtitle">Gestão & Embaralhamento</div>
                 </div>
             </div>
@@ -32,12 +32,17 @@
                 <a href="{{ url_for('provas.list_provas') }}" class="nav-link {% if 'provas' in request.endpoint and 'gabaritos' not in request.endpoint %}active{% endif %}">
                     <span class="nav-icon"><i class="bi bi-journal-text"></i></span> Provas & Gerador
                 </a>
+                {% if current_user.is_coordenacao %}
+                <a href="{{ url_for('professores.list_professores') }}" class="nav-link {% if 'professores' in request.endpoint %}active{% endif %}">
+                    <span class="nav-icon"><i class="bi bi-people"></i></span> Professores
+                </a>
+                {% endif %}
             </nav>
 
             <div class="sidebar-footer">
                 <div class="user-info">
                     <span class="user-name">{{ current_user.nome }}</span>
-                    <span class="user-role">{{ current_user.perfil }}</span>
+                    <span class="user-role">{{ 'Coordenação' if current_user.is_coordenacao else 'Professor' }}</span>
                 </div>
                 <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-secondary" title="Sair do sistema" style="padding: 4px 8px; color: #f8fafc; background: rgba(255,255,255,0.1); border: none;">
                     <i class="bi bi-box-arrow-right"></i>

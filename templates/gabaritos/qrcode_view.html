@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabarito Oficial — Versão {{ prova_gerada.numero_versao }} ({{ prova_gerada.codigo_versao }}) — CoordenaçãoProvas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            padding: 16px;
+            margin: 0;
+        }
+        .qr-card {
+            max-width: 580px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .qr-header {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 24px 20px;
+            text-align: center;
+        }
+        .qr-badge {
+            background: #1e40af;
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 6px;
+        }
+        .qr-content {
+            padding: 24px 20px;
+        }
+        .table-gab {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        .table-gab th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            text-align: center;
+        }
+        .table-gab td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+            font-size: 14px;
+        }
+        .table-gab tr:nth-child(even) {
+            background: #fafafa;
+        }
+        .ans-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #1e40af;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-card">
+        <div class="qr-header">
+            <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Sistema CoordenaçãoProvas</div>
+            <h1 style="font-size: 20px; font-weight: 700; margin: 8px 0 4px 0; color: #ffffff;">Gabarito Oficial da Avaliação</h1>
+            <div style="font-size: 14px; color: #cbd5e1;">{{ prova_gerada.prova_base.titulo }}</div>
+            <div class="qr-badge">Versão {{ "%02d"|format(prova_gerada.numero_versao) }} — Código: {{ prova_gerada.codigo_versao }}</div>
+        </div>
+
+        <div class="qr-content">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+                <div>
+                    <div><strong>Disciplina:</strong> {{ prova_gerada.prova_base.disciplina.nome }}</div>
+                    <div style="margin-top: 4px;"><strong>Turma:</strong> {{ prova_gerada.prova_base.turma }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div><strong>Data:</strong> {{ prova_gerada.prova_base.data_aplicacao.strftime('%d/%m/%Y') if prova_gerada.prova_base.data_aplicacao else '___/___/______' }}</div>
+                    <div style="margin-top: 4px;"><strong>Total:</strong> {{ gabaritos|length }} Questões</div>
+                </div>
+            </div>
+
+            <table class="table-gab">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Questão</th>
+                        <th style="width: 60%;">Alternativa Correta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in gabaritos %}
+                    <tr>
+                        <td style="font-weight: 700; color: #0f172a;">
+                            Questão {{ "%02d"|format(g.numero_questao) }}
+                        </td>
+                        <td>
+                            <div class="ans-pill">{{ g.letra_correta }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer-note">
+            <div><i class="bi bi-qr-code"></i> Gabarito verificado diretamente pelo QR-Code da Prova</div>
+            <div style="margin-top: 4px;">CoordenaçãoProvas — Todos os direitos reservados.</div>
+        </div>
+    </div>
+</body>
+</html>

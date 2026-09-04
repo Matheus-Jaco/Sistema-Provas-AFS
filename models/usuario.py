@@ -23,5 +23,10 @@ class Usuario(UserMixin, db.Model):
     def check_senha(self, senha):
         return check_password_hash(self.senha_hash, senha)
 
+    @property
+    def is_coordenacao(self):
+        return self.perfil in ['admin', 'coordenador']
+
     def __repr__(self):
         return f"<Usuario {self.nome} ({self.email})>"
+

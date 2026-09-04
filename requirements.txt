@@ -5,3 +5,5 @@ Werkzeug==3.0.3
 python-dotenv==1.0.1
 PyMySQL==1.1.1
 reportlab==4.2.2
+qrcode==8.2
+Pillow>=10.0.0
