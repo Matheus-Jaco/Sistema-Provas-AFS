@@ -23,6 +23,15 @@ CREATE TABLE IF NOT EXISTS `disciplinas` (
     `criada_em` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2.1. Relacionamento de disciplinas atribuídas a cada professor
+CREATE TABLE IF NOT EXISTS `usuario_disciplinas` (
+    `usuario_id` INT NOT NULL,
+    `disciplina_id` INT NOT NULL,
+    PRIMARY KEY (`usuario_id`, `disciplina_id`),
+    FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`disciplina_id`) REFERENCES `disciplinas`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 3. Tabela de Questões
 CREATE TABLE IF NOT EXISTS `questoes` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,

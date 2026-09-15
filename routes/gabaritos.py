@@ -11,8 +11,8 @@ gabaritos_bp = Blueprint('gabaritos', __name__, url_prefix='/gabaritos')
 def visualizar(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
     pb = pg.prova_base
-    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
-        flash('Você só tem acesso aos gabaritos das suas próprias provas.', 'danger')
+    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+        flash('Você só tem acesso aos gabaritos das suas próprias provas da disciplina atribuída.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
     gabaritos = sorted(pg.gabaritos, key=lambda x: x.numero_questao)
@@ -39,8 +39,8 @@ def consulta_qrcode(prova_gerada_id=None, codigo_versao=None):
 @login_required
 def matriz(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
-    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
-        flash('Você só tem acesso à matriz de gabarito das suas próprias provas.', 'danger')
+    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+        flash('Você só tem acesso à matriz de gabarito das suas próprias provas da disciplina atribuída.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
     versoes = sorted(pb.versoes_geradas, key=lambda v: v.numero_versao)
@@ -64,7 +64,7 @@ def matriz(prova_base_id):
 def download_pdf_gabarito(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
     pb = pg.prova_base
-    if not current_user.is_coordenacao and pb.criado_por != current_user.id:
+    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
         flash('Sem permissão para baixar este gabarito.', 'danger')
         return redirect(url_for('provas.list_provas'))
 

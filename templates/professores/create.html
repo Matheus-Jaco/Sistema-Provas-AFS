@@ -51,6 +51,22 @@
             </select>
         </div>
 
+        <div class="form-group" style="margin-bottom: 28px;">
+            <label class="form-label">Disciplinas atribuídas ao professor *</label>
+            {% if disciplinas %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #f8fafc;">
+                    {% for disciplina in disciplinas %}
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-primary);">
+                        <input type="checkbox" name="disciplinas" value="{{ disciplina.id }}">
+                        {{ disciplina.nome }}
+                    </label>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 13px; color: var(--text-muted);">Nenhuma disciplina cadastrada ainda. Cadastre-a na área de coordenação antes de criar o professor.</p>
+            {% endif %}
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
             <a href="{{ url_for('professores.list_professores') }}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">

@@ -13,6 +13,7 @@ class Disciplina(db.Model):
     # Relacionamentos
     questoes = db.relationship('Questao', backref='disciplina', lazy=True, cascade='all, delete-orphan')
     provas_base = db.relationship('ProvaBase', backref='disciplina', lazy=True, cascade='all, delete-orphan')
+    professores = db.relationship('Usuario', secondary='usuario_disciplinas', back_populates='disciplinas', lazy='select')
 
     def __repr__(self):
         return f"<Disciplina {self.nome}>"

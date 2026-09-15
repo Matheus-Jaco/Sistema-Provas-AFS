@@ -81,9 +81,15 @@ def _inicializar_dados_padrao():
         mat = Disciplina(nome="Matemática", codigo="MAT-100", descricao="Álgebra, Geometria e Estatística")
         fis = Disciplina(nome="Física", codigo="FIS-100", descricao="Mecânica, Termodinâmica e Eletromagnetismo")
         his = Disciplina(nome="História", codigo="HIS-100", descricao="História do Brasil e História Geral")
-        
+
         db.session.add_all([mat, fis, his])
         db.session.commit()
+
+        if Usuario.query.count() > 0:
+            prof = Usuario.query.filter_by(email='carlos@escola.edu.br').first()
+            if prof:
+                prof.disciplinas = [mat, fis, his]
+                db.session.commit()
 
 app = create_app()
 

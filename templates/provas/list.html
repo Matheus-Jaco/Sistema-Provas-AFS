@@ -6,9 +6,11 @@
 
 {% block top_actions %}
 <div class="btn-group">
+    {% if current_user.is_coordenacao %}
     <button type="button" class="btn btn-secondary" onclick="openModal('modal-disciplina')">
         <i class="bi bi-plus-circle"></i> Cadastrar Disciplina
     </button>
+    {% endif %}
     <a href="{{ url_for('provas.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Criar Nova Prova
     </a>
@@ -83,6 +85,7 @@
     {% endif %}
 </div>
 
+{% if current_user.is_coordenacao %}
 <!-- Modal para cadastro rápido de Disciplina -->
 <div id="modal-disciplina" class="modal-backdrop">
     <div class="modal-card">
@@ -110,4 +113,5 @@
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}

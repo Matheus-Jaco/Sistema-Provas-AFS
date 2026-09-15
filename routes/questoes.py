@@ -10,6 +10,12 @@ questoes_bp = Blueprint('questoes', __name__, url_prefix='/questoes')
 @questoes_bp.route('/disciplinas/criar', methods=['POST'])
 @login_required
 def criar_disciplina_rapida():
+    if not current_user.is_coordenacao:
+        flash('Acesso restrito: somente a coordenação pode cadastrar disciplinas.', 'danger')
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Acesso restrito: somente a coordenação pode cadastrar disciplinas.'}), 403
+        return redirect(url_for('dashboard.index'))
+
     if request.is_json:
         data = request.get_json()
         nome = data.get('nome', '').strip()
@@ -52,11 +58,18 @@ def list_questoes():
 
     query = Questao.query
 
-    # Se for professor, lista apenas as suas próprias questões; Coordenação vê de todos
-    if not current_user.is_coordenacao:
+    if current_user.is_coordenacao:
+        disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
+    else:
+        disciplinas = current_user.disciplinas_permitidas()
+        disciplina_ids = [d.id for d in disciplinas]
+        query = query.filter(Questao.disciplina_id.in_(disciplina_ids))
         query = query.filter(Questao.criado_por == current_user.id)
 
     if disciplina_id:
+        if not current_user.is_coordenacao and disciplina_id not in [d.id for d in disciplinas]:
+            flash('Você só pode visualizar questões de disciplinas atribuídas pela coordenação.', 'danger')
+            return redirect(url_for('questoes.list_questoes'))
         query = query.filter(Questao.disciplina_id == disciplina_id)
     if dificuldade:
         query = query.filter(Questao.dificuldade == dificuldade)
@@ -64,7 +77,6 @@ def list_questoes():
         query = query.filter((Questao.enunciado.ilike(f'%{busca}%')) | (Questao.tags.ilike(f'%{busca}%')))
 
     questoes = query.order_by(Questao.criado_em.desc()).all()
-    disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
 
     return render_template(
         'questoes/list.html',
@@ -78,7 +90,7 @@ def list_questoes():
 @questoes_bp.route('/criar', methods=['GET', 'POST'])
 @login_required
 def create():
-    disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
+    disciplinas = current_user.disciplinas_permitidas() if not current_user.is_coordenacao else Disciplina.query.order_by(Disciplina.nome).all()
 
     if request.method == 'POST':
         enunciado = request.form.get('enunciado', '').strip()
@@ -87,15 +99,16 @@ def create():
         dificuldade = request.form.get('dificuldade', 'media')
         tags = request.form.get('tags', '').strip()
 
-        # Validação backend
         if not enunciado:
             flash('O enunciado da questão é obrigatório.', 'warning')
             return render_template('questoes/create.html', disciplinas=disciplinas)
         if not disciplina_id:
             flash('Selecione uma disciplina válida.', 'warning')
             return render_template('questoes/create.html', disciplinas=disciplinas)
+        if not current_user.is_coordenacao and not current_user.pode_acessar_disciplina(disciplina_id):
+            flash('Você só pode criar questões para disciplinas atribuídas pela coordenação.', 'danger')
+            return render_template('questoes/create.html', disciplinas=disciplinas)
 
-        # Capturar itens/alternativas
         itens_textos = request.form.getlist('item_texto[]')
         item_correto_idx = request.form.get('item_correto', type=int, default=0)
 
@@ -136,12 +149,11 @@ def create():
 def edit(id):
     questao = Questao.query.get_or_404(id)
 
-    # Bloqueia se o professor tentar editar questão de outro
     if not current_user.is_coordenacao and questao.criado_por != current_user.id:
         flash('Você só pode editar suas próprias questões.', 'danger')
         return redirect(url_for('questoes.list_questoes'))
 
-    disciplinas = Disciplina.query.order_by(Disciplina.nome).all()
+    disciplinas = current_user.disciplinas_permitidas() if not current_user.is_coordenacao else Disciplina.query.order_by(Disciplina.nome).all()
 
     if request.method == 'POST':
         enunciado = request.form.get('enunciado', '').strip()
@@ -152,6 +164,9 @@ def edit(id):
 
         if not enunciado or not disciplina_id:
             flash('Enunciado e disciplina são campos obrigatórios.', 'warning')
+            return render_template('questoes/edit.html', questao=questao, disciplinas=disciplinas)
+        if not current_user.is_coordenacao and not current_user.pode_acessar_disciplina(disciplina_id):
+            flash('Você só pode editar questões de disciplinas atribuídas pela coordenação.', 'danger')
             return render_template('questoes/edit.html', questao=questao, disciplinas=disciplinas)
 
         itens_textos = request.form.getlist('item_texto[]')
@@ -168,7 +183,6 @@ def edit(id):
         questao.dificuldade = dificuldade
         questao.tags = tags
 
-        # Atualizar itens
         Item.query.filter_by(questao_id=questao.id).delete()
         for idx, texto in enumerate(itens_validos):
             is_correta = (idx == item_correto_idx)
@@ -191,9 +205,11 @@ def edit(id):
 def delete(id):
     questao = Questao.query.get_or_404(id)
 
-    # Bloqueia se o professor tentar excluir questão de outro
     if not current_user.is_coordenacao and questao.criado_por != current_user.id:
         flash('Você só pode excluir suas próprias questões.', 'danger')
+        return redirect(url_for('questoes.list_questoes'))
+    if not current_user.is_coordenacao and not current_user.pode_acessar_disciplina(questao.disciplina_id):
+        flash('Você só pode excluir questões de disciplinas atribuídas pela coordenação.', 'danger')
         return redirect(url_for('questoes.list_questoes'))
 
     db.session.delete(questao)

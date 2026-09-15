@@ -52,13 +52,18 @@ class CoordenacaoProfessoresQRTestCase(unittest.TestCase):
 
     def test_coordenacao_cria_professor_e_login_funciona(self):
         """CoordenaçãoProvas cadastra professor e o professor consegue logar com seu perfil"""
+        disciplina = Disciplina(nome='Português', codigo='POR-01')
+        db.session.add(disciplina)
+        db.session.commit()
+
         self.login("coordenacao@escola.edu.br", "coord123")
 
         res_criar = self.client.post('/professores/criar', data={
             'nome': 'Prof. Fernanda Lima',
             'email': 'fernanda@escola.edu.br',
             'senha': 'senhafernanda',
-            'perfil': 'professor'
+            'perfil': 'professor',
+            'disciplinas': [str(disciplina.id)]
         }, follow_redirects=True)
         self.assertEqual(res_criar.status_code, 200)
         self.assertIn('Prof. Fernanda Lima'.encode('utf-8'), res_criar.data)
@@ -80,9 +85,11 @@ class CoordenacaoProfessoresQRTestCase(unittest.TestCase):
         # Professor 1
         prof1 = Usuario(nome="Prof. João Silva", email="joao@escola.edu.br", perfil="professor")
         prof1.set_senha("joao123")
+        prof1.disciplinas = [disc]
         # Professor 2
         prof2 = Usuario(nome="Profa. Maria Santos", email="maria@escola.edu.br", perfil="professor")
         prof2.set_senha("maria123")
+        prof2.disciplinas = [disc]
         db.session.add_all([prof1, prof2])
         db.session.commit()
 
@@ -130,6 +137,76 @@ class CoordenacaoProfessoresQRTestCase(unittest.TestCase):
         self.login("lucas@escola.edu.br", "lucas123")
         res = self.client.get('/professores/', follow_redirects=True)
         self.assertIn('Acesso restrito'.encode('utf-8'), res.data)
+
+    def test_professor_nao_ve_ou_usa_cadastro_de_disciplinas(self):
+        """Professores não podem visualizar nem criar disciplinas via UI ou rotas de disciplina."""
+        disc = Disciplina(nome='Filosofia', codigo='FIL-01')
+        db.session.add(disc)
+        db.session.commit()
+
+        prof = Usuario(nome='Prof. Helena', email='helena@escola.edu.br', perfil='professor')
+        prof.set_senha('helena123')
+        prof.disciplinas = [disc]
+        db.session.add(prof)
+        db.session.commit()
+
+        self.login('helena@escola.edu.br', 'helena123')
+
+        res_provas = self.client.get('/provas/', follow_redirects=True)
+        self.assertNotIn('Cadastrar Disciplina'.encode('utf-8'), res_provas.data)
+
+        res_questoes = self.client.get('/questoes/criar', follow_redirects=True)
+        self.assertNotIn('Nova Disciplina'.encode('utf-8'), res_questoes.data)
+
+        res_quick = self.client.post('/questoes/disciplinas/criar', json={
+            'nome': 'Sociologia',
+            'codigo': 'SOC-01',
+            'descricao': 'Nova disciplina'
+        }, follow_redirects=True)
+        self.assertIn('Acesso restrito', res_quick.get_data(as_text=True))
+
+        res_provas_post = self.client.post('/provas/disciplinas/criar', data={
+            'nome': 'Geografia',
+            'codigo': 'GEO-01',
+            'descricao': 'Nova disciplina'
+        }, follow_redirects=True)
+        self.assertIn('Acesso restrito', res_provas_post.get_data(as_text=True))
+
+    def test_professor_precisa_ter_disciplinas_atribuidas_e_nao_cria_fora_delas(self):
+        """Professor só pode operar em disciplinas atribuídas pela coordenação."""
+        mat = Disciplina(nome="Química Aplicada", codigo="QUI-01")
+        bio = Disciplina(nome="Biologia Molecular", codigo="BIO-01")
+        db.session.add_all([mat, bio])
+        db.session.commit()
+
+        self.login("coordenacao@escola.edu.br", "coord123")
+        res = self.client.post('/professores/criar', data={
+            'nome': 'Prof. Ana Souza',
+            'email': 'ana@escola.edu.br',
+            'senha': 'ana123',
+            'perfil': 'professor',
+            'disciplinas': [str(mat.id)]
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Prof. Ana Souza'.encode('utf-8'), res.data)
+
+        self.logout()
+        self.login("ana@escola.edu.br", "ana123")
+
+        res_form = self.client.get('/questoes/criar')
+        self.assertIn('Química Aplicada'.encode('utf-8'), res_form.data)
+        self.assertNotIn('Biologia Molecular'.encode('utf-8'), res_form.data)
+
+        res_forbidden = self.client.post('/questoes/criar', data={
+            'enunciado': 'Questão não permitida',
+            'disciplina_id': str(bio.id),
+            'tipo': 'multipla_escolha',
+            'dificuldade': 'media',
+            'tags': 'proibida',
+            'item_texto[]': ['A', 'B'],
+            'item_correto': '0'
+        }, follow_redirects=True)
+        self.assertIn('disciplinas atribuídas'.encode('utf-8'), res_forbidden.data)
 
     def test_qr_code_e_cartao_resposta_na_prova(self):
         """Testa geração do QR Code e consulta pública do gabarito vinculado"""
