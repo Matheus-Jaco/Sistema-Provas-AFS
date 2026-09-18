@@ -12,7 +12,7 @@ from models.usuario import Usuario
 from models.disciplina import Disciplina
 from models.questao import Questao
 from models.item import Item
-from models.prova_base import ProvaBase, ProvaBaseQuestao
+from models.prova_base import ProvaBase, ProvaBaseQuestao, ProvaBaseDisciplina, ProvaBaseConfiguracao
 from models.prova_gerada import ProvaGerada
 from services.shuffle_service import gerar_versoes_embaralhadas
 
@@ -121,6 +121,44 @@ class ShuffleServiceTestCase(unittest.TestCase):
         q_ordem2 = [q.questao_id for q in v2.questoes_embaralhadas]
 
         self.assertEqual(q_ordem1, q_ordem2)
+
+    def test_blocos_de_disciplinas_respeitam_ordem_quando_nao_embaralhados(self):
+        segunda_disciplina = Disciplina(nome="Física Teste", codigo="FIS-TEST")
+        db.session.add(segunda_disciplina)
+        db.session.flush()
+
+        segunda_questao = Questao(
+            enunciado="Enunciado da Questão de Física",
+            disciplina_id=segunda_disciplina.id,
+            dificuldade="media",
+            criado_por=self.user.id
+        )
+        db.session.add(segunda_questao)
+        db.session.flush()
+        db.session.add(Item(
+            questao_id=segunda_questao.id,
+            texto="Alternativa da Física",
+            correta=True,
+            ordem_original=1
+        ))
+        db.session.add(ProvaBaseDisciplina(
+            prova_base_id=self.pb.id,
+            disciplina_id=self.disc.id,
+            ordem=1
+        ))
+        db.session.add(ProvaBaseDisciplina(
+            prova_base_id=self.pb.id,
+            disciplina_id=segunda_disciplina.id,
+            ordem=2
+        ))
+        db.session.add(ProvaBaseConfiguracao(prova_base_id=self.pb.id, embaralhar_blocos=False))
+        db.session.add(ProvaBaseQuestao(prova_base_id=self.pb.id, questao_id=segunda_questao.id, ordem=6))
+        db.session.commit()
+
+        versao = gerar_versoes_embaralhadas(self.pb.id, 1, seed_prefix="BLOCOS")[0]
+        questoes = [registro.questao for registro in versao.questoes_embaralhadas]
+        self.assertEqual(questoes[-1].disciplina_id, segunda_disciplina.id)
+        self.assertTrue(all(questao.disciplina_id == self.disc.id for questao in questoes[:-1]))
 
 if __name__ == '__main__':
     unittest.main()

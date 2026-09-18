@@ -71,6 +71,21 @@ def gerar_pdf_prova(prova_gerada_id, base_url="http://127.0.0.1:5000"):
         spaceAfter=4
     )
 
+    disciplina_style = ParagraphStyle(
+        'DisciplinaStyle',
+        parent=body_style,
+        fontName='Helvetica-Bold',
+        fontSize=11,
+        leading=14,
+        spaceBefore=14,
+        spaceAfter=6,
+        textColor=colors.HexColor('#1e3a8a'),
+        backColor=colors.HexColor('#eff6ff'),
+        borderColor=colors.HexColor('#1e40af'),
+        borderWidth=1,
+        borderPadding=6
+    )
+
     opcao_style = ParagraphStyle(
         'OpcaoStyle',
         parent=body_style,
@@ -104,7 +119,8 @@ def gerar_pdf_prova(prova_gerada_id, base_url="http://127.0.0.1:5000"):
     # Cabeçalho da Prova Institucional
     story.append(Paragraph("COORDENAÇÃO PROVAS — SISTEMA INSTITUCIONAL DE ENSINO", header_title_style))
     story.append(Spacer(1, 3))
-    story.append(Paragraph(f"<b>Avaliação de {prova_base.disciplina.nome.upper()}</b>", header_title_style))
+    disciplinas_titulo = ', '.join(bloco.disciplina.nome for bloco in prova_base.disciplinas_associadas) or prova_base.disciplina.nome.upper()
+    story.append(Paragraph(f"<b>Avaliação de {disciplinas_titulo}</b>", header_title_style))
     story.append(Spacer(1, 6))
 
     # Tabela de Informações do Aluno / Turma / Versão
@@ -146,9 +162,14 @@ def gerar_pdf_prova(prova_gerada_id, base_url="http://127.0.0.1:5000"):
             itens_por_questao[pgi.questao_id] = []
         itens_por_questao[pgi.questao_id].append(pgi)
 
+    ultima_disciplina_id = None
     for pgq in pg_questoes:
         q_num = pgq.ordem_embaralhada
         questao = pgq.questao
+
+        if not prova_base.embaralhar_blocos and ultima_disciplina_id != questao.disciplina_id:
+            story.append(Paragraph(f"DISCIPLINA: {questao.disciplina.nome.upper()}", disciplina_style))
+            ultima_disciplina_id = questao.disciplina_id
         
         # Enunciado
         story.append(Paragraph(f"<b>Questão {q_num:02d}.</b> {questao.enunciado}", enunciado_style))

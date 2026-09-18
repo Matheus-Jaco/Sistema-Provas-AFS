@@ -1,6 +1,7 @@
 import random
 import uuid
 import string
+from types import SimpleNamespace
 from models import db
 from models.prova_base import ProvaBase
 from models.prova_gerada import ProvaGerada, ProvaGeradaQuestao, ProvaGeradaItem
@@ -24,7 +25,8 @@ def gerar_versoes_embaralhadas(prova_base_id, quantidade_x, seed_prefix=None):
     """
     Gera X versões embaralhadas de uma prova base.
     Em cada versão:
-      1. Embaralha a ordem das questões de forma independente.
+        1. Mantém os blocos de disciplinas ou os embaralha, conforme a configuração,
+            e embaralha a ordem das questões dentro de cada bloco.
       2. Embaralha a ordem das alternativas/itens dentro de cada questão de forma independente.
       3. Atribui novas letras (A, B, C, D...) às posições embaralhadas.
       4. Identifica a resposta correta original e grava o gabarito correspondente.
@@ -60,9 +62,31 @@ def gerar_versoes_embaralhadas(prova_base_id, quantidade_x, seed_prefix=None):
         db.session.add(prova_gerada)
         db.session.flush() # Gerar ID da prova_gerada
 
-        # 2. Embaralhar questões da prova via Fisher-Yates
-        questoes_originais = [pbq.questao for pbq in pb_questoes]
-        questoes_embaralhadas = fisher_yates_shuffle(questoes_originais, rng)
+        # 2. Montar blocos e embaralhar a ordem entre eles quando configurado.
+        questoes_por_disciplina = {}
+        for pbq in pb_questoes:
+            questoes_por_disciplina.setdefault(pbq.questao.disciplina_id, []).append(pbq.questao)
+
+        disciplinas = prova_base.disciplinas_associadas
+        if not disciplinas:
+            disciplinas = []
+            disciplinas_ids = []
+            for pbq in pb_questoes:
+                disciplina_id = pbq.questao.disciplina_id
+                if disciplina_id not in disciplinas_ids:
+                    disciplinas_ids.append(disciplina_id)
+                    disciplinas.append(SimpleNamespace(disciplina_id=disciplina_id))
+
+        blocos = []
+        for bloco in disciplinas:
+            questoes_do_bloco = questoes_por_disciplina.get(bloco.disciplina_id, [])
+            if questoes_do_bloco:
+                blocos.append(fisher_yates_shuffle(questoes_do_bloco, rng))
+
+        if prova_base.embaralhar_blocos:
+            blocos = fisher_yates_shuffle(blocos, rng)
+
+        questoes_embaralhadas = [questao for bloco in blocos for questao in bloco]
 
         for num_q, questao in enumerate(questoes_embaralhadas, start=1):
             # Grava a nova posição da questão na prova gerada

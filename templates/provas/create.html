@@ -22,13 +22,25 @@
 
                 <div class="form-group">
                     <label class="form-label" for="prova-disciplina-select">Disciplina *</label>
-                    <select name="disciplina_id" id="prova-disciplina-select" class="form-select" required>
+                    <select id="prova-disciplina-select" class="form-select">
                         <option value="">Selecione uma disciplina...</option>
                         {% for d in disciplinas %}
                         <option value="{{ d.id }}">{{ d.nome }}</option>
                         {% endfor %}
                     </select>
+                    <div id="selected-disciplines" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;"></div>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Escolha uma disciplina por vez. Para criar uma prova com mais disciplinas, selecione a próxima no mesmo campo.</p>
                 </div>
+
+                {% if current_user.is_coordenacao or disciplinas|length > 1 %}
+                <div class="form-group" style="background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md);">
+                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" name="embaralhar_blocos" value="1" id="embaralhar_blocos">
+                        Embaralhar blocos de disciplinas em cada versão
+                    </label>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0 26px;">As questões continuam sendo embaralhadas dentro de cada bloco.</p>
+                </div>
+                {% endif %}
 
                 <div class="form-row">
                     <div class="form-group">

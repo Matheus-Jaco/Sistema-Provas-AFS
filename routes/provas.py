@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 import io
 
 from models import db
-from models.prova_base import ProvaBase, ProvaBaseQuestao
+from models.prova_base import ProvaBase, ProvaBaseQuestao, ProvaBaseDisciplina, ProvaBaseConfiguracao
 from models.prova_gerada import ProvaGerada
 from models.disciplina import Disciplina
 from models.questao import Questao
@@ -23,7 +23,10 @@ def list_provas():
     else:
         disciplinas = current_user.disciplinas_permitidas()
         disciplina_ids = [d.id for d in disciplinas]
-        provas_base = ProvaBase.query.filter(ProvaBase.criado_por == current_user.id, ProvaBase.disciplina_id.in_(disciplina_ids)).order_by(ProvaBase.criada_em.desc()).all()
+        provas_base = [
+            prova for prova in ProvaBase.query.filter_by(criado_por=current_user.id).order_by(ProvaBase.criada_em.desc()).all()
+            if prova.disciplina_ids.intersection(disciplina_ids)
+        ]
 
     return render_template('provas/list.html', provas_base=provas_base, disciplinas=disciplinas)
 
@@ -53,6 +56,13 @@ def criar_disciplina():
     flash(f'Disciplina "{nome}" cadastrada com sucesso!', 'success')
     return redirect(url_for('provas.list_provas'))
 
+
+def _pode_acessar_prova(prova_base):
+    return current_user.is_coordenacao or (
+        prova_base.criado_por == current_user.id
+        and prova_base.disciplina_ids.issubset(current_user.disciplina_ids_permitidos())
+    )
+
 @provas_bp.route('/criar', methods=['GET', 'POST'])
 @login_required
 def create():
@@ -66,19 +76,30 @@ def create():
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
-        disciplina_id = request.form.get('disciplina_id', type=int)
+        disciplinas_ids = list(dict.fromkeys(
+            int(value) for value in request.form.getlist('disciplinas_ids[]') if value.isdigit()
+        ))
+        disciplina_id = disciplinas_ids[0] if disciplinas_ids else None
         turma = request.form.get('turma', '').strip()
         data_str = request.form.get('data_aplicacao', '').strip()
         instrucoes = request.form.get('instrucoes', '').strip()
+        embaralhar_blocos = request.form.get('embaralhar_blocos') == '1'
 
         questoes_ids = request.form.getlist('questoes_ids[]')
         quantidade_x = request.form.get('quantidade_x', type=int, default=1)
 
-        if not titulo or not disciplina_id or not turma:
-            flash('Título, disciplina e turma são campos obrigatórios.', 'warning')
+        if not titulo or not disciplinas_ids or not turma:
+            flash('Título, pelo menos uma disciplina e turma são campos obrigatórios.', 'warning')
             return render_template('provas/create.html', disciplinas=disciplinas, questoes=questoes_disponiveis)
-        if not current_user.is_coordenacao and not current_user.pode_acessar_disciplina(disciplina_id):
+        disciplinas_permitidas_ids = {disciplina.id for disciplina in disciplinas}
+        if not set(disciplinas_ids).issubset(disciplinas_permitidas_ids):
             flash('Você só pode criar provas para disciplinas atribuídas pela coordenação.', 'danger')
+            return render_template('provas/create.html', disciplinas=disciplinas, questoes=questoes_disponiveis)
+        if embaralhar_blocos and len(disciplinas_ids) < 2:
+            flash('Selecione pelo menos duas disciplinas para embaralhar os blocos.', 'warning')
+            return render_template('provas/create.html', disciplinas=disciplinas, questoes=questoes_disponiveis)
+        if embaralhar_blocos and not (current_user.is_coordenacao or len(disciplinas_permitidas_ids) > 1):
+            flash('O embaralhamento de blocos está disponível somente para a coordenação e professores com mais de uma disciplina.', 'danger')
             return render_template('provas/create.html', disciplinas=disciplinas, questoes=questoes_disponiveis)
         if not questoes_ids:
             flash('Selecione pelo menos 1 questão para compor a prova-base.', 'danger')
@@ -87,7 +108,7 @@ def create():
         questoes_validas = []
         for q_id in questoes_ids:
             q = Questao.query.get(int(q_id))
-            if q and (current_user.is_coordenacao or (q.criado_por == current_user.id and current_user.pode_acessar_disciplina(q.disciplina_id))):
+            if q and q.disciplina_id in disciplinas_ids and (current_user.is_coordenacao or (q.criado_por == current_user.id and current_user.pode_acessar_disciplina(q.disciplina_id))):
                 questoes_validas.append(int(q_id))
 
         if not questoes_validas:
@@ -111,6 +132,17 @@ def create():
         )
         db.session.add(pb)
         db.session.flush()
+
+        for ordem, selected_disciplina_id in enumerate(disciplinas_ids, start=1):
+            db.session.add(ProvaBaseDisciplina(
+                prova_base_id=pb.id,
+                disciplina_id=selected_disciplina_id,
+                ordem=ordem
+            ))
+        db.session.add(ProvaBaseConfiguracao(
+            prova_base_id=pb.id,
+            embaralhar_blocos=embaralhar_blocos
+        ))
 
         for idx, q_id in enumerate(questoes_validas, start=1):
             pb_q = ProvaBaseQuestao(
@@ -136,7 +168,7 @@ def create():
 @login_required
 def geradas_list(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
-    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+    if not _pode_acessar_prova(pb):
         flash('Você não tem permissão para visualizar as versões desta prova.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
@@ -147,7 +179,7 @@ def geradas_list(prova_base_id):
 @login_required
 def gerar_mais_versoes(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
-    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+    if not _pode_acessar_prova(pb):
         flash('Sem permissão para alterar esta prova.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
@@ -166,7 +198,7 @@ def gerar_mais_versoes(prova_base_id):
 def visualizar_prova(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
     pb = pg.prova_base
-    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+    if not _pode_acessar_prova(pb):
         flash('Sem permissão para visualizar esta versão.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
@@ -201,7 +233,7 @@ def visualizar_prova(prova_gerada_id):
 def download_pdf_prova(prova_gerada_id):
     pg = ProvaGerada.query.get_or_404(prova_gerada_id)
     pb = pg.prova_base
-    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+    if not _pode_acessar_prova(pb):
         flash('Sem permissão para baixar esta prova.', 'danger')
         return redirect(url_for('provas.list_provas'))
 
@@ -218,7 +250,7 @@ def download_pdf_prova(prova_gerada_id):
 @login_required
 def download_zip_lote(prova_base_id):
     pb = ProvaBase.query.get_or_404(prova_base_id)
-    if not current_user.is_coordenacao and (pb.criado_por != current_user.id or not current_user.pode_acessar_disciplina(pb.disciplina_id)):
+    if not _pode_acessar_prova(pb):
         flash('Sem permissão para exportar este lote.', 'danger')
         return redirect(url_for('provas.list_provas'))
 

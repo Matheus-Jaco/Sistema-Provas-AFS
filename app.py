@@ -8,7 +8,7 @@ from models.usuario import Usuario
 from models.disciplina import Disciplina
 from models.questao import Questao
 from models.item import Item
-from models.prova_base import ProvaBase, ProvaBaseQuestao
+from models.prova_base import ProvaBase, ProvaBaseQuestao, ProvaBaseDisciplina, ProvaBaseConfiguracao
 from models.prova_gerada import ProvaGerada, ProvaGeradaQuestao, ProvaGeradaItem
 from models.gabarito import Gabarito
 

@@ -81,6 +81,22 @@ CREATE TABLE IF NOT EXISTS `provas_base_questoes` (
     FOREIGN KEY (`questao_id`) REFERENCES `questoes`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 6.1. Disciplinas e configuração dos blocos da prova-base
+CREATE TABLE IF NOT EXISTS `provas_base_disciplinas` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `prova_base_id` INT NOT NULL,
+    `disciplina_id` INT NOT NULL,
+    `ordem` INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (`prova_base_id`) REFERENCES `provas_base`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`disciplina_id`) REFERENCES `disciplinas`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `provas_base_configuracoes` (
+    `prova_base_id` INT PRIMARY KEY,
+    `embaralhar_blocos` BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (`prova_base_id`) REFERENCES `provas_base`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 7. Tabela de Provas Geradas (Versões Embaralhadas X)
 CREATE TABLE IF NOT EXISTS `provas_geradas` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,

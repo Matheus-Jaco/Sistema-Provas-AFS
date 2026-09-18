@@ -23,7 +23,7 @@
     <!-- Cabeçalho Institucional da Prova (Papel A4) -->
     <div class="exam-header">
         <h2>COORDENAÇÃO PROVAS — SISTEMA INSTITUCIONAL DE ENSINO</h2>
-        <h3>Avaliação de {{ prova_gerada.prova_base.disciplina.nome.upper() }}</h3>
+        <h3>Avaliação de {{ prova_gerada.prova_base.disciplinas_associadas|map(attribute='disciplina.nome')|join(', ') or prova_gerada.prova_base.disciplina.nome.upper() }}</h3>
     </div>
 
     <!-- Quadro de Identificação do Aluno / Turma / Versão -->
@@ -50,7 +50,14 @@
     <hr style="border: 0; border-top: 1px solid #cbd5e1; margin-bottom: 24px;">
 
     <!-- Renderização das Questões Embaralhadas -->
+    {% set ultima_disciplina_id = namespace(valor=None) %}
     {% for pgq in pg_questoes %}
+    {% if not prova_gerada.prova_base.embaralhar_blocos and ultima_disciplina_id.valor != pgq.questao.disciplina_id %}
+    <div style="margin: 22px 0 12px; padding: 8px 12px; border-left: 4px solid #1e40af; background: #eff6ff; color: #1e3a8a; font-size: 14px; font-weight: 700; text-transform: uppercase; page-break-after: avoid;">
+        Disciplina: {{ pgq.questao.disciplina.nome }}
+    </div>
+    {% set ultima_disciplina_id.valor = pgq.questao.disciplina_id %}
+    {% endif %}
     <div class="exam-question-item">
         <div class="exam-question-title">
             Questão {{ "%02d"|format(pgq.ordem_embaralhada) }}. {{ pgq.questao.enunciado }}
