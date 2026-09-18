@@ -67,14 +67,6 @@ def _inicializar_dados_padrao():
         coordenacao.set_senha("admin123")
         db.session.add(coordenacao)
 
-        prof = Usuario(
-            nome="Prof. Carlos Silva",
-            email="carlos@escola.edu.br",
-            perfil="professor"
-        )
-        prof.set_senha("prof123")
-        db.session.add(prof)
-
         db.session.commit()
 
     if Disciplina.query.count() == 0:
